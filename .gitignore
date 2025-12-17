@@ -1,0 +1,10 @@
+# Generated output
+dist/
+
+# Node modules
+node_modules/
+
+# Build artifacts
+*.log
+.DS_Store
+

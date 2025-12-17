@@ -1,0 +1,484 @@
+/* Page Loader Styles - Converted from SCSS */
+
+/* Container */
+.container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  margin: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  z-index: 99999;
+  pointer-events: none;
+  background: #eaeaea;
+  opacity: 1;
+  visibility: visible;
+  transition:
+    opacity 0.5s ease-in-out 1.95s,
+    visibility 0s linear 2.45s,
+    display 0s linear 2.45s;
+}
+
+.container.loaded {
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+  z-index: -1 !important;
+  display: none !important;
+}
+
+/* Also hide when body has new-page class */
+:global(body.new-page) .container {
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+  z-index: -1 !important;
+  display: none !important;
+}
+
+/* Dark mode support - use class-based dark mode */
+:global(.dark) .container {
+  background: #000000;
+}
+
+:global(.dark) .spinner > .path {
+  stroke: #ef836e !important;
+}
+
+:global(.dark) .layer1 > .path,
+:global(.dark) .layer2 > .path,
+:global(.dark) .layer3 > .path,
+:global(.dark) .layer4 > .path,
+:global(.dark) .layer5 > .path,
+:global(.dark) .layer6 > .path,
+:global(.dark) .layer7 > .path,
+:global(.dark) .layer8 > .path {
+  stroke: rgba(255, 255, 255, 0.3) !important;
+}
+
+/* Also support system preference */
+@media (prefers-color-scheme: dark) {
+  :global(body:not(.light)) .container {
+    background: #000000;
+  }
+
+  :global(body:not(.light)) .spinner > .path {
+    stroke: #ef836e !important;
+  }
+
+  :global(body:not(.light)) .layer1 > .path,
+  :global(body:not(.light)) .layer2 > .path,
+  :global(body:not(.light)) .layer3 > .path,
+  :global(body:not(.light)) .layer4 > .path,
+  :global(body:not(.light)) .layer5 > .path,
+  :global(body:not(.light)) .layer6 > .path,
+  :global(body:not(.light)) .layer7 > .path,
+  :global(body:not(.light)) .layer8 > .path {
+    stroke: rgba(255, 255, 255, 0.3) !important;
+  }
+}
+
+/* Loader */
+.loader {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  margin: auto;
+  width: 100%;
+  height: 100%;
+  max-width: 1200px;
+  max-height: 1200px;
+  transform: scale(1);
+  z-index: 9999;
+  transform: translate3d(0, 0, 0);
+}
+
+.loaded .loader,
+:global(body.loaded) .loader {
+  transform: scale(0);
+  transition: all 2.25s forwards 1.25s ease-in-out;
+}
+
+.loader g,
+.loader circle {
+  transform-origin: 50% 50%;
+}
+
+/* Core */
+.core > .path {
+  fill: var(--loader-major);
+  visibility: hidden;
+  transform: scale(1);
+  transition: all 0.625s 0.15625s ease-in-out;
+  transform: translate3d(0, 0, 0);
+}
+
+:global(body.loaded) .core > .path {
+  visibility: visible;
+  animation: core-loaded 2.5s ease-in-out;
+}
+
+@keyframes core-loaded {
+  0% {
+    visibility: hidden;
+    transform: scale(1);
+  }
+  25%,
+  85% {
+    opacity: 1;
+    visibility: visible;
+    transform: scale(1000);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1);
+  }
+}
+
+/* Spinner */
+.spinner {
+  opacity: 1 !important;
+  transition: opacity 0.1s 0.1s;
+  animation: rotate 1.25s linear infinite !important;
+  transform: translate3d(0, 0, 0);
+  visibility: visible !important;
+}
+
+:global(body.loaded) .spinner {
+  opacity: 0;
+}
+
+.spinner > .path {
+  stroke: var(--loader-major) !important;
+  stroke-width: 6 !important;
+  stroke-dasharray: 157 !important; /* 2 * 3.14 * 25 */
+  stroke-dashoffset: 157;
+  animation: spinner 1.25s both infinite ease-in-out !important;
+  transform: translate3d(0, 0, 0);
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+@keyframes rotate {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(270deg);
+  }
+}
+
+@keyframes spinner {
+  0% {
+    stroke-dasharray: 157;
+    stroke-dashoffset: 157;
+  }
+  65% {
+    stroke-dasharray: 157;
+    stroke-dashoffset: 39.25;
+    transform: rotate(135deg);
+  }
+  100% {
+    stroke-dasharray: 157;
+    stroke-dashoffset: 157;
+    transform: rotate(450deg);
+  }
+}
+
+/* Layer 1 */
+.layer1 > .path {
+  stroke: rgba(234, 234, 234, 0.8);
+  stroke-width: 15;
+  stroke-dasharray: 1507.2; /* 6.28 * 240 */
+  stroke-dashoffset: 1507.2;
+  visibility: hidden;
+  transform: rotate(-30deg);
+  transform: translate3d(0, 0, 0);
+  fill: none;
+}
+
+:global(body.loaded) .layer1 > .path {
+  visibility: visible !important;
+  animation: layer-1 1.25s ease-in !important;
+  opacity: 1 !important;
+}
+
+@keyframes layer-1 {
+  0% {
+    stroke-dasharray: 1507.2;
+    stroke-dashoffset: 1507.2;
+  }
+  75% {
+    stroke-width: 15;
+    stroke-dashoffset: 753.6;
+  }
+  100% {
+    stroke: var(--loader-minor);
+    stroke-width: 225;
+    stroke-dasharray: 1513.48;
+    stroke-dashoffset: 0;
+    transform: rotate(450deg);
+  }
+}
+
+/* Layer 2 */
+.layer2 > .path {
+  stroke: rgba(234, 234, 234, 0.3);
+  stroke-width: 20;
+  stroke-dasharray: 1507.2;
+  stroke-dashoffset: 1507.2;
+  visibility: hidden;
+  transform: rotate(-60deg);
+  transform: translate3d(0, 0, 0);
+}
+
+:global(body.loaded) .layer2 > .path {
+  visibility: visible;
+  animation: layer-2 1.25s ease-in;
+}
+
+@keyframes layer-2 {
+  0% {
+    stroke-dasharray: 1507.2;
+    stroke-dashoffset: 1507.2;
+  }
+  75% {
+    stroke-width: 20;
+    stroke-dashoffset: 753.6;
+  }
+  100% {
+    stroke: var(--loader-minor);
+    stroke-width: 60;
+    stroke-dasharray: 1513.48;
+    stroke-dashoffset: 0;
+    transform: rotate(420deg);
+  }
+}
+
+/* Layer 3 */
+.layer3 > .path {
+  stroke: rgba(234, 234, 234, 0.8);
+  stroke-width: 40;
+  stroke-dasharray: 1130.4; /* 6.28 * 180 */
+  stroke-dashoffset: 1130.4;
+  visibility: hidden;
+  transform: rotate(-70deg);
+  transform: translate3d(0, 0, 0);
+}
+
+:global(body.loaded) .layer3 > .path {
+  visibility: visible;
+  animation: layer-3 1.25s ease-in;
+}
+
+@keyframes layer-3 {
+  0% {
+    stroke-dasharray: 1130.4;
+    stroke-dashoffset: 1130.4;
+  }
+  75% {
+    stroke-width: 40;
+    stroke-dashoffset: 565.2;
+  }
+  100% {
+    stroke: var(--loader-minor);
+    stroke-width: 120;
+    stroke-dasharray: 1136.68;
+    stroke-dashoffset: 0;
+    transform: rotate(410deg);
+  }
+}
+
+/* Layer 4 */
+.layer4 > .path {
+  stroke: rgba(234, 234, 234, 0.6);
+  stroke-width: 20;
+  stroke-dasharray: 1507.2;
+  stroke-dashoffset: 1507.2;
+  visibility: hidden;
+  transform: rotate(-90deg);
+  transform: translate3d(0, 0, 0);
+}
+
+:global(body.loaded) .layer4 > .path {
+  visibility: visible;
+  animation: layer-4 1.25s ease-in;
+}
+
+@keyframes layer-4 {
+  0% {
+    stroke-dasharray: 1507.2;
+    stroke-dashoffset: 1507.2;
+  }
+  75% {
+    stroke-width: 20;
+    stroke-dashoffset: 753.6;
+  }
+  100% {
+    stroke: var(--loader-minor);
+    stroke-width: 60;
+    stroke-dasharray: 1513.48;
+    stroke-dashoffset: 0;
+    transform: rotate(390deg);
+  }
+}
+
+/* Layer 5 */
+.layer5 > .path {
+  stroke: rgba(234, 234, 234, 0.5);
+  stroke-width: 30;
+  stroke-dasharray: 1884; /* 6.28 * 300 */
+  stroke-dashoffset: 1884;
+  visibility: hidden;
+  transform: rotate(-20deg);
+  transform: translate3d(0, 0, 0);
+}
+
+:global(body.loaded) .layer5 > .path {
+  visibility: visible;
+  animation: layer-5 1.25s ease-in;
+}
+
+@keyframes layer-5 {
+  0% {
+    stroke-dasharray: 1884;
+    stroke-dashoffset: 1884;
+  }
+  75% {
+    stroke-width: 30;
+    stroke-dashoffset: 942;
+  }
+  100% {
+    stroke: var(--loader-minor);
+    stroke-width: 90;
+    stroke-dasharray: 1890.28;
+    stroke-dashoffset: 0;
+    transform: rotate(460deg);
+  }
+}
+
+/* Layer 6 */
+.layer6 > .path {
+  stroke: rgba(234, 234, 234, 0.2);
+  stroke-width: 45;
+  stroke-dasharray: 2386.4; /* 6.28 * 380 */
+  stroke-dashoffset: 2386.4;
+  visibility: hidden;
+  transform: rotate(-80deg);
+  transform: translate3d(0, 0, 0);
+}
+
+:global(body.loaded) .layer6 > .path {
+  visibility: visible;
+  animation: layer-6 1.25s ease-in;
+}
+
+@keyframes layer-6 {
+  0% {
+    stroke-dasharray: 2386.4;
+    stroke-dashoffset: 2386.4;
+  }
+  75% {
+    stroke-width: 45;
+    stroke-dashoffset: 1193.2;
+  }
+  100% {
+    stroke: var(--loader-minor);
+    stroke-width: 135;
+    stroke-dasharray: 2392.68;
+    stroke-dashoffset: 0;
+    transform: rotate(400deg);
+  }
+}
+
+/* Layer 7 */
+.layer7 > .path {
+  stroke: rgba(234, 234, 234, 1);
+  stroke-width: 75;
+  stroke-dasharray: 2826; /* 6.28 * 450 */
+  stroke-dashoffset: 2826;
+  visibility: hidden;
+  transform: rotate(-10deg);
+  transform: translate3d(0, 0, 0);
+}
+
+:global(body.loaded) .layer7 > .path {
+  visibility: visible;
+  animation: layer-7 1.25s ease-in;
+}
+
+@keyframes layer-7 {
+  0% {
+    stroke-dasharray: 2826;
+    stroke-dashoffset: 2826;
+  }
+  75% {
+    stroke-width: 75;
+    stroke-dashoffset: 1413;
+  }
+  100% {
+    stroke: var(--loader-minor);
+    stroke-width: 225;
+    stroke-dasharray: 2832.28;
+    stroke-dashoffset: 0;
+    transform: rotate(470deg);
+  }
+}
+
+/* Layer 8 */
+.layer8 > .path {
+  stroke: rgba(234, 234, 234, 0.5);
+  stroke-width: 250;
+  stroke-dasharray: 3391.2; /* 6.28 * 540 */
+  stroke-dashoffset: 3391.2;
+  visibility: hidden;
+  transform: rotate(-70deg);
+  transform: translate3d(0, 0, 0);
+}
+
+:global(body.loaded) .layer8 > .path {
+  visibility: visible;
+  animation: layer-8 1.25s ease-in;
+}
+
+@keyframes layer-8 {
+  0% {
+    stroke-dasharray: 3391.2;
+    stroke-dashoffset: 3391.2;
+  }
+  75% {
+    stroke-width: 250;
+    stroke-dashoffset: 1695.6;
+  }
+  100% {
+    stroke: var(--loader-minor);
+    stroke-width: 750;
+    stroke-dasharray: 3397.48;
+    stroke-dashoffset: 0;
+    transform: rotate(410deg);
+  }
+}
+
+/* Path base styles */
+.path {
+  transform: translate3d(0, 0, 0);
+}
+
+/* Allow spinner animation from start, prevent layer animations until loaded */
+:global(body:not(.loaded)) .layer1 > .path,
+:global(body:not(.loaded)) .layer2 > .path,
+:global(body:not(.loaded)) .layer3 > .path,
+:global(body:not(.loaded)) .layer4 > .path,
+:global(body:not(.loaded)) .layer5 > .path,
+:global(body:not(.loaded)) .layer6 > .path,
+:global(body:not(.loaded)) .layer7 > .path,
+:global(body:not(.loaded)) .layer8 > .path,
+:global(body:not(.loaded)) .core > .path {
+  animation: none !important;
+}

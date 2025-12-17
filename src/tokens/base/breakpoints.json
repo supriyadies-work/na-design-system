@@ -1,0 +1,9 @@
+{
+  "breakpoint": {
+    "mob": { "value": "375px" },
+    "tablet": { "value": "768px" },
+    "laptop": { "value": "1024px" },
+    "desktop": { "value": "1280px" },
+    "laptopl": { "value": "1440px" }
+  }
+}

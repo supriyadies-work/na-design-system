@@ -1,0 +1,52 @@
+{
+  "component": {
+    "button": {
+      "primary": {
+        "background": { "value": "{color.primary.600}" },
+        "backgroundHover": { "value": "{color.primary.700}" },
+        "text": { "value": "{color.white}" },
+        "border": { "value": "transparent" }
+      },
+      "secondary": {
+        "background": { "value": "{color.neutral.200}" },
+        "backgroundHover": { "value": "{color.neutral.300}" },
+        "text": { "value": "{color.neutral.900}" },
+        "border": { "value": "transparent" }
+      },
+      "outline": {
+        "background": { "value": "transparent" },
+        "backgroundHover": { "value": "{color.neutral.50}" },
+        "text": { "value": "{color.neutral.700}" },
+        "border": { "value": "{color.neutral.300}" }
+      },
+      "ghost": {
+        "background": { "value": "transparent" },
+        "backgroundHover": { "value": "{color.neutral.100}" },
+        "text": { "value": "{color.neutral.700}" },
+        "border": { "value": "transparent" }
+      },
+      "danger": {
+        "background": { "value": "{color.semantic.error.600}" },
+        "backgroundHover": { "value": "{color.semantic.error.700}" },
+        "text": { "value": "{color.white}" },
+        "border": { "value": "transparent" }
+      }
+    },
+    "input": {
+      "background": { "value": "{color.white}" },
+      "backgroundDisabled": { "value": "{color.neutral.100}" },
+      "border": { "value": "{color.neutral.300}" },
+      "borderHover": { "value": "{color.neutral.400}" },
+      "borderFocus": { "value": "{color.primary.500}" },
+      "borderError": { "value": "{color.semantic.error.500}" },
+      "text": { "value": "{color.neutral.900}" },
+      "textPlaceholder": { "value": "{color.neutral.400}" },
+      "textDisabled": { "value": "{color.neutral.500}" }
+    },
+    "card": {
+      "background": { "value": "{color.white}" },
+      "border": { "value": "{color.neutral.200}" },
+      "shadow": { "value": "{shadow.sm}" }
+    }
+  }
+}
