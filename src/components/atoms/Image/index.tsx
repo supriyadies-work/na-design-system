@@ -39,11 +39,20 @@ export const Image: React.FC<ImageProps> = ({
   onClick,
   suppressHydrationWarning,
 }) => {
-  // For external images (from CDN/bucket), use unoptimized to avoid Next.js optimization layer latency
-  // Next.js optimization adds latency (fetch, convert, serve) which can hurt performance
-  // External images are typically already optimized by CDN
+  // For external images, use conditional optimization:
+  // - Desktop: unoptimized (faster, desktop has bandwidth)
+  // - Mobile: optimized (smaller file size, mobile needs compression)
   const isExternal = src.startsWith("http://") || src.startsWith("https://");
-  const shouldOptimize = !unoptimized && !isExternal;
+  
+  // Always optimize if explicitly requested, or if it's not external
+  let shouldOptimize = !unoptimized && !isExternal;
+  
+  // For external images, optimize on mobile to reduce file size
+  if (isExternal && typeof window !== "undefined") {
+    // Check if mobile (width < 1024px) - optimize for mobile
+    const isMobile = window.innerWidth < 1024;
+    shouldOptimize = isMobile; // Optimize on mobile, unoptimized on desktop
+  }
 
   if (fill) {
     return (
