@@ -15,6 +15,11 @@ interface ImageProps {
   sizes?: string;
   unoptimized?: boolean;
   quality?: number;
+  loading?: "lazy" | "eager";
+  onLoad?: () => void;
+  onError?: () => void;
+  onClick?: (e: React.MouseEvent<HTMLImageElement>) => void;
+  suppressHydrationWarning?: boolean;
 }
 
 export const Image: React.FC<ImageProps> = ({
@@ -28,6 +33,11 @@ export const Image: React.FC<ImageProps> = ({
   sizes,
   unoptimized = false,
   quality = 85,
+  loading,
+  onLoad,
+  onError,
+  onClick,
+  suppressHydrationWarning,
 }) => {
   // For external images (from CDN/bucket), use unoptimized to avoid Next.js optimization layer latency
   // Next.js optimization adds latency (fetch, convert, serve) which can hurt performance
@@ -46,6 +56,11 @@ export const Image: React.FC<ImageProps> = ({
         sizes={sizes}
         unoptimized={!shouldOptimize}
         quality={quality}
+        loading={loading}
+        onLoad={onLoad}
+        onError={onError}
+        onClick={onClick}
+        suppressHydrationWarning={suppressHydrationWarning}
       />
     );
   }
@@ -61,6 +76,11 @@ export const Image: React.FC<ImageProps> = ({
       sizes={sizes}
       unoptimized={!shouldOptimize}
       quality={quality}
+      loading={loading}
+      onLoad={onLoad}
+      onError={onError}
+      onClick={onClick}
+      suppressHydrationWarning={suppressHydrationWarning}
     />
   );
 };
