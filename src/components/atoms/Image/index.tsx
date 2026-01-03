@@ -29,9 +29,11 @@ export const Image: React.FC<ImageProps> = ({
   unoptimized = false,
   quality = 85,
 }) => {
-  // Allow Next.js to optimize external images if unoptimized is not explicitly set to true
-  // Next.js can optimize external images from allowed domains in next.config.js
-  const shouldOptimize = !unoptimized;
+  // For external images (from CDN/bucket), use unoptimized to avoid Next.js optimization layer latency
+  // Next.js optimization adds latency (fetch, convert, serve) which can hurt performance
+  // External images are typically already optimized by CDN
+  const isExternal = src.startsWith("http://") || src.startsWith("https://");
+  const shouldOptimize = !unoptimized && !isExternal;
 
   if (fill) {
     return (
