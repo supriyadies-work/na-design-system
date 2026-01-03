@@ -33,10 +33,7 @@ export const CoverImage: React.FC<CoverImageProps> = ({
         containerClassName
       )}
     >
-      <div
-        className="relative w-full"
-        style={{ height: "60vh", minHeight: "400px" }}
-      >
+      <div className="relative w-full h-[60vh] min-h-[400px]">
         <Image
           src={src}
           alt={alt}

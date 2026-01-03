@@ -51,11 +51,11 @@ const defaultTags = {
 
 export const Text = React.forwardRef<HTMLElement, TextProps>(
   ({ children, variant = "body", className, as, style }, ref) => {
-    const Component = as || (defaultTags[variant] as any);
+    const Component = as || defaultTags[variant];
     const baseStyles = variantStyles[variant];
 
     return (
-      <Component ref={ref} className={cn(baseStyles, className)} style={style}>
+      <Component ref={ref as any} className={cn(baseStyles, className)} style={style}>
         {children}
       </Component>
     );
