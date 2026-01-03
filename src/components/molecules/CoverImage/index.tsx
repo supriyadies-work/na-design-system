@@ -40,8 +40,8 @@ export const CoverImage: React.FC<CoverImageProps> = ({
           fill
           className={cn("object-cover", className)}
           priority={priority}
-          sizes={sizes}
-          unoptimized={src.startsWith("http://") || src.startsWith("https://")}
+          sizes={sizes || "(max-width: 640px) 100vw, (max-width: 1024px) 90vw, 1200px"}
+          quality={90}
         />
       </div>
     </div>

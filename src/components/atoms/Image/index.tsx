@@ -14,6 +14,7 @@ interface ImageProps {
   priority?: boolean;
   sizes?: string;
   unoptimized?: boolean;
+  quality?: number;
 }
 
 export const Image: React.FC<ImageProps> = ({
@@ -26,8 +27,11 @@ export const Image: React.FC<ImageProps> = ({
   priority = false,
   sizes,
   unoptimized = false,
+  quality = 85,
 }) => {
-  const isExternal = src.startsWith("http://") || src.startsWith("https://");
+  // Allow Next.js to optimize external images if unoptimized is not explicitly set to true
+  // Next.js can optimize external images from allowed domains in next.config.js
+  const shouldOptimize = !unoptimized;
 
   if (fill) {
     return (
@@ -38,7 +42,8 @@ export const Image: React.FC<ImageProps> = ({
         className={cn("object-cover", className)}
         priority={priority}
         sizes={sizes}
-        unoptimized={isExternal || unoptimized}
+        unoptimized={!shouldOptimize}
+        quality={quality}
       />
     );
   }
@@ -52,7 +57,8 @@ export const Image: React.FC<ImageProps> = ({
       className={cn("object-cover", className)}
       priority={priority}
       sizes={sizes}
-      unoptimized={isExternal || unoptimized}
+      unoptimized={!shouldOptimize}
+      quality={quality}
     />
   );
 };
