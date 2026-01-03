@@ -1,5 +1,5 @@
 import React from "react";
-import Image from "next/image";
+import { Image } from "@na-design-system/components/atoms/Image";
 import { cn } from "@na-design-system/utils/cn";
 
 interface AvatarProps {
@@ -8,6 +8,7 @@ interface AvatarProps {
   name?: string;
   size?: "sm" | "md" | "lg" | "xl";
   className?: string;
+  priority?: boolean; // Allow priority loading for critical avatars (e.g., in header)
 }
 
 const sizeStyles = {
@@ -23,6 +24,7 @@ export const Avatar: React.FC<AvatarProps> = ({
   name,
   size = "md",
   className,
+  priority = false,
 }) => {
   const initials = name
     ?.split(" ")
@@ -30,6 +32,9 @@ export const Avatar: React.FC<AvatarProps> = ({
     .join("")
     .toUpperCase()
     .slice(0, 2);
+
+  // Calculate sizes for responsive images
+  const sizesValue = size === "sm" ? "32px" : size === "md" ? "48px" : size === "lg" ? "64px" : "96px";
 
   return (
     <div
@@ -47,7 +52,9 @@ export const Avatar: React.FC<AvatarProps> = ({
           alt={alt || name || "Avatar"}
           fill
           className="object-cover"
-          sizes={`${size === "sm" ? "32px" : size === "md" ? "48px" : size === "lg" ? "64px" : "96px"}`}
+          sizes={sizesValue}
+          priority={priority}
+          quality={85}
         />
       ) : (
         <span>{initials || "?"}</span>
