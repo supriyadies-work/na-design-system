@@ -6,3 +6,5 @@ export { Pagination } from "./Pagination";
 export { Breadcrumbs } from "./Breadcrumbs";
 export { ModalFull } from "./ModalFull";
 export { default as PageLoader } from "./PageLoader";
+export { Sidebar } from "./Sidebar";
+export type { SidebarMenuItem, SidebarFooterItem, SidebarProps } from "./Sidebar";

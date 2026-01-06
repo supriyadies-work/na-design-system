@@ -17,3 +17,4 @@ export { Icon } from "./Icon";
 export { Avatar } from "./Avatar";
 export { Image } from "./Image";
 export { MorphingTransition } from "./MorphingTransition";
+export { default as AnimatedBackground } from "./AnimatedBackground";

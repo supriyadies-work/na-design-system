@@ -3,6 +3,8 @@
 import { useEffect, useState, useRef } from "react";
 import Lottie from "lottie-react";
 import styles from "./PageLoader.module.css";
+// Load Lottie data from design system public directory
+// Reference file directly from package, no need to bundle
 
 export default function PageLoader() {
   const [lottieData, setLottieData] = useState(null);
@@ -20,14 +22,25 @@ export default function PageLoader() {
 
     $body ? $body.addClass("loading") : body.classList.add("loading");
 
-    fetch("/lottie/nisaaulia-intro.json")
-      .then((res) => res.json())
-      .then((json) => {
-        setLottieData(json);
-      })
-      .catch((error) => {
-        console.error("Failed to load Lottie animation:", error);
-      });
+    // Load Lottie data from design system public directory
+    // Reference file directly from package public folder
+    const loadLottieData = async () => {
+      try {
+        // Load from package public directory via Next.js public folder
+        // File is served from node_modules/@supriyadies-work/na-design-system/public
+        const response = await fetch('/lottie/nisaaulia-intro.json');
+        if (response.ok) {
+          const data = await response.json();
+          setLottieData(data);
+        } else {
+          console.warn('Failed to load Lottie from /lottie/nisaaulia-intro.json');
+        }
+      } catch (error) {
+        console.error('Failed to load Lottie animation:', error);
+      }
+    };
+    
+    loadLottieData();
 
     const fallbackTimer = setTimeout(() => {
       if (!isLoadedRef.current) {
