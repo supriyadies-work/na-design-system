@@ -27,29 +27,31 @@ export const FilterGroup: React.FC<FilterGroupProps> = ({
   }
 
   return (
-    <div className={cn("flex flex-wrap gap-2", className)}>
-      <Text variant="label" className="text-sm font-medium self-center">
+    <div className={cn("flex flex-wrap items-center gap-2", className)}>
+      <Text variant="label" className="text-sm font-medium whitespace-nowrap">
         {label}:
       </Text>
-      <Button
-        variant="filter"
-        size="sm"
-        onClick={() => onSelect("all")}
-        isActive={selectedValue === "all"}
-      >
-        {allLabel}
-      </Button>
-      {options.map((option) => (
+      <div className="flex flex-wrap gap-2">
         <Button
-          key={option}
           variant="filter"
           size="sm"
-          onClick={() => onSelect(option)}
-          isActive={selectedValue === option}
+          onClick={() => onSelect("all")}
+          isActive={selectedValue === "all"}
         >
-          {formatOption ? formatOption(option) : option}
+          {allLabel}
         </Button>
-      ))}
+        {options.map((option) => (
+          <Button
+            key={option}
+            variant="filter"
+            size="sm"
+            onClick={() => onSelect(option)}
+            isActive={selectedValue === option}
+          >
+            {formatOption ? formatOption(option) : option}
+          </Button>
+        ))}
+      </div>
     </div>
   );
 };
