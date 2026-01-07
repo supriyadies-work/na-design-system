@@ -27,16 +27,17 @@ export const FilterGroup: React.FC<FilterGroupProps> = ({
   }
 
   return (
-    <div className={cn("flex flex-wrap items-center gap-2", className)}>
+    <div className={cn("flex flex-wrap items-center gap-3", className)}>
       <Text variant="label" className="text-sm font-medium whitespace-nowrap">
         {label}:
       </Text>
       <div className="flex flex-wrap gap-2">
         <Button
           variant="filter"
-          size="sm"
+          size="md"
           onClick={() => onSelect("all")}
           isActive={selectedValue === "all"}
+          className="px-4 py-2 h-10"
         >
           {allLabel}
         </Button>
@@ -44,9 +45,10 @@ export const FilterGroup: React.FC<FilterGroupProps> = ({
           <Button
             key={option}
             variant="filter"
-            size="sm"
+            size="md"
             onClick={() => onSelect(option)}
             isActive={selectedValue === option}
+            className="px-4 py-2 h-10"
           >
             {formatOption ? formatOption(option) : option}
           </Button>
