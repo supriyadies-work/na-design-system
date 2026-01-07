@@ -61,10 +61,12 @@ export const TabContent: React.FC<TabContentProps> = ({
           selectedValue={currentTabIndex}
           onChange={onChange}
         />
-        <Button variant="outline" onClick={onViewAllClick}>
-          View All
-          <Icon name="chevronRight" className="w-4 h-4" />
-        </Button>
+        {onViewAllClick && (
+          <Button variant="outline" onClick={onViewAllClick}>
+            View All
+            <Icon name="chevronRight" className="w-4 h-4" />
+          </Button>
+        )}
       </div>
       <div
         ref={tabContentRef}
