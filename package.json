@@ -1,13 +1,14 @@
 {
   "name": "@supriyadies-work/na-design-system",
-  "version": "1.1.21",
+  "version": "1.1.22",
   "description": "Design System package for Nisa Aulia Portfolio",
   "repository": {
     "type": "git",
     "url": "https://github.com/supriyadies-work/na-design-system.git"
   },
   "publishConfig": {
-    "registry": "https://npm.pkg.github.com"
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
   },
   "main": "./dist/js/index.js",
   "module": "./dist/js/index.js",
@@ -39,18 +40,22 @@
     "build:resolve-aliases": "tsc-alias",
     "build:copy-assets": "node scripts/copy-assets.js",
     "build:watch": "npm run build:tokens -- --watch",
-    "prepublishOnly": "npm run build"
+    "prepublishOnly": "npm run build",
+    "publish:npm": "npm publish --access public",
+    "version:patch": "npm version patch",
+    "version:minor": "npm version minor",
+    "version:major": "npm version major"
   },
   "peerDependencies": {
     "lottie-react": "^2.4.0",
     "next": "^14.0.0",
     "next-themes": "^0.4.0",
     "react": "^18.0.0",
-    "react-dom": "^18.0.0",
-    "react-quill": "^2.0.0"
+    "react-dom": "^18.0.0"
   },
   "dependencies": {
     "clsx": "^2.1.1",
+    "react-quill": "^2.0.0",
     "tailwind-merge": "^3.4.0"
   },
   "devDependencies": {
@@ -59,7 +64,6 @@
     "@types/react-dom": "^18.3.1",
     "lottie-react": "^2.4.1",
     "next-themes": "^0.4.6",
-    "react-quill": "^2.0.0",
     "style-dictionary": "^5.1.1",
     "tsc-alias": "^1.8.16",
     "typescript": "^5.7.2"
