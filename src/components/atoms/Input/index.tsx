@@ -8,6 +8,7 @@ interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   error?: string;
   helperText?: string;
   required?: boolean;
+  testId?: string;
 }
 
 export const Input: React.FC<InputProps> = ({
@@ -17,6 +18,7 @@ export const Input: React.FC<InputProps> = ({
   required = false,
   className,
   id,
+  testId,
   ...props
 }) => {
   const generatedId = useId();
@@ -29,6 +31,7 @@ export const Input: React.FC<InputProps> = ({
         <label
           htmlFor={inputId}
           className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2"
+          data-testid={testId ? `${testId}.label` : undefined}
         >
           {label}
           {required && (
@@ -62,6 +65,7 @@ export const Input: React.FC<InputProps> = ({
               : undefined
         }
         required={required}
+        data-testid={testId}
         {...props}
       />
       {error && (

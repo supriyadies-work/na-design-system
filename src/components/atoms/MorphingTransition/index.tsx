@@ -13,6 +13,7 @@ interface MorphingTransitionProps {
   };
   initialPath?: string;
   className?: string;
+  testId?: string;
 }
 
 /**
@@ -31,9 +32,10 @@ export const MorphingTransition: React.FC<MorphingTransitionProps> = ({
   },
   initialPath = "M0-18.1c0,0,117.3,6.1,221,0s190.7,3.5,264.3,0c53.4-2.6,145-0.1,271.4,0c59.3,0.1,208.2,0,332.5,0 c76.2,0,120.1-3,226.6,0c74.1,2.1,150.4,0,243.5,0c96.8,0,175.8,8.5,230.8,0c55.7-8.6,129.8,0,129.8,0V0H0V-18.1z",
   className = "morphin-wrap",
+  testId,
 }) => {
   return (
-    <div ref={wrapRef} className={className}>
+    <div ref={wrapRef} className={className} data-testid={testId}>
       <svg
         ref={svgRef}
         className="morphin-svg"

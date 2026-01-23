@@ -26,6 +26,7 @@ interface RichTextEditorProps {
   blogSlug?: string; // Untuk upload image
   className?: string;
   onPendingImagesChange?: (images: PendingImage[]) => void; // Callback untuk pending images
+  testId?: string;
 }
 
 const RichTextEditor: React.FC<RichTextEditorProps> = ({
@@ -35,6 +36,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
   blogSlug,
   className = "",
   onPendingImagesChange,
+  testId,
 }) => {
   const { theme } = useTheme();
   const [mounted, setMounted] = useState(false);
@@ -559,7 +561,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
         `}
       `}</style>
       <div className="rich-text-editor-wrapper">
-        <div ref={quillRef}>
+        <div ref={quillRef} data-testid={testId}>
           <ReactQuill
             theme="snow"
             value={value}

@@ -15,6 +15,7 @@ interface FormFieldProps {
   error?: string;
   validation?: ValidationRule;
   className?: string;
+  testId?: string;
 }
 
 export const FormField: React.FC<FormFieldProps> = ({
@@ -28,6 +29,7 @@ export const FormField: React.FC<FormFieldProps> = ({
   error: externalError,
   validation,
   className = "",
+  testId,
 }) => {
   const [internalError, setInternalError] = React.useState<string | null>(null);
   const [touched, setTouched] = React.useState(false);
@@ -61,8 +63,8 @@ export const FormField: React.FC<FormFieldProps> = ({
   const error = externalError || internalError;
 
   return (
-    <div className={`mb-4 ${className}`}>
-      <label htmlFor={name} className="block mb-2">
+    <div className={`mb-4 ${className}`} data-testid={testId}>
+      <label htmlFor={name} className="block mb-2" data-testid={testId ? `${testId}.label` : undefined}>
         <Text variant="body" className="font-medium">
           {label}
           {required && (
@@ -82,6 +84,7 @@ export const FormField: React.FC<FormFieldProps> = ({
           placeholder={placeholder}
           required={required}
           error={error || undefined}
+          testId={testId ? `${testId}.input` : undefined}
         />
       ) : (
         <Input
@@ -94,10 +97,11 @@ export const FormField: React.FC<FormFieldProps> = ({
           placeholder={placeholder}
           required={required}
           error={error || undefined}
+          testId={testId ? `${testId}.input` : undefined}
         />
       )}
       {error && touched && (
-        <span role="alert" className="text-error-500 mt-1 text-sm">
+        <span role="alert" className="text-error-500 mt-1 text-sm" data-testid={testId ? `${testId}.error` : undefined}>
           {error}
         </span>
       )}

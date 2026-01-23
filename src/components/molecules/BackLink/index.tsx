@@ -11,6 +11,7 @@ interface BackLinkProps {
   label?: string;
   className?: string;
   iconClassName?: string;
+  testId?: string;
 }
 
 /**
@@ -22,6 +23,7 @@ export const BackLink: React.FC<BackLinkProps> = ({
   label = "Back",
   className,
   iconClassName,
+  testId,
 }) => {
   return (
     <Link
@@ -30,9 +32,10 @@ export const BackLink: React.FC<BackLinkProps> = ({
         "inline-flex items-center gap-2 text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white mb-8 transition-colors",
         className
       )}
+      testId={testId}
     >
-      <Icon name="arrowLeft" size="md" className={iconClassName} />
-      <Text variant="body" className="font-medium">
+      <Icon name="arrowLeft" size="md" className={iconClassName} testId={testId ? `${testId}.icon` : undefined} />
+      <Text variant="body" className="font-medium" testId={testId ? `${testId}.label` : undefined}>
         {label}
       </Text>
     </Link>

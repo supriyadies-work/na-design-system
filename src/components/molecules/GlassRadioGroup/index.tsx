@@ -15,6 +15,7 @@ interface GlassRadioGroupProps {
   selectedValue: number;
   onChange: (value: number) => void;
   className?: string;
+  testId?: string;
 }
 
 export const GlassRadioGroup: React.FC<GlassRadioGroupProps> = ({
@@ -23,6 +24,7 @@ export const GlassRadioGroup: React.FC<GlassRadioGroupProps> = ({
   selectedValue,
   onChange,
   className,
+  testId,
 }) => {
   const gliderRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -57,9 +59,10 @@ export const GlassRadioGroup: React.FC<GlassRadioGroupProps> = ({
       ref={containerRef}
       className={cn("glass-radio-group", className)}
       role="radiogroup"
+      data-testid={testId}
     >
       <div className="glass-glider" ref={gliderRef} />
-      {options.map((option) => (
+      {options.map((option, index) => (
         <React.Fragment key={option.id}>
           <input
             type="radio"
@@ -69,8 +72,9 @@ export const GlassRadioGroup: React.FC<GlassRadioGroupProps> = ({
             checked={selectedValue === option.value}
             onChange={() => onChange(option.value)}
             className="sr-only"
+            data-testid={testId ? `${testId}.radio.${option.id}.${index}` : undefined}
           />
-          <label htmlFor={option.id}>{option.label}</label>
+          <label htmlFor={option.id} data-testid={testId ? `${testId}.label.${option.id}.${index}` : undefined}>{option.label}</label>
         </React.Fragment>
       ))}
     </div>

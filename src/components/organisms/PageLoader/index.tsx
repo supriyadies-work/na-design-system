@@ -6,7 +6,11 @@ import styles from "./PageLoader.module.css";
 // Load Lottie data from design system public directory
 // Reference file directly from package, no need to bundle
 
-export default function PageLoader() {
+interface PageLoaderProps {
+  testId?: string;
+}
+
+export default function PageLoader({ testId }: PageLoaderProps) {
   const [lottieData, setLottieData] = useState(null);
   const [isLoaded, setIsLoaded] = useState(false);
   const [isNewPage, setIsNewPage] = useState(false);
@@ -92,6 +96,7 @@ export default function PageLoader() {
       className={`${styles.container} ${isLoaded ? "loaded" : ""}`}
       style={{ backgroundColor: "#ffffff" }}
       suppressHydrationWarning
+      data-testid={testId}
     >
       {lottieData && (
         <Lottie

@@ -18,6 +18,7 @@ interface TextProps {
   className?: string;
   as?: React.ElementType;
   style?: React.CSSProperties;
+  testId?: string;
 }
 
 // Using design tokens via Tailwind classes
@@ -50,12 +51,12 @@ const defaultTags = {
 };
 
 export const Text = React.forwardRef<HTMLElement, TextProps>(
-  ({ children, variant = "body", className, as, style }, ref) => {
+  ({ children, variant = "body", className, as, style, testId }, ref) => {
     const Component = as || defaultTags[variant];
     const baseStyles = variantStyles[variant];
 
     return (
-      <Component ref={ref as any} className={cn(baseStyles, className)} style={style}>
+      <Component ref={ref as any} className={cn(baseStyles, className)} style={style} data-testid={testId}>
         {children}
       </Component>
     );

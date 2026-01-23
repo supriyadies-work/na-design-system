@@ -9,6 +9,7 @@ interface IconProps {
   className?: string;
   stroke?: boolean;
   fill?: boolean;
+  testId?: string;
 }
 
 const sizeStyles = {
@@ -25,6 +26,7 @@ export const Icon: React.FC<IconProps> = ({
   className,
   stroke = true,
   fill = false,
+  testId,
 }) => {
   const iconPath = name ? iconPaths[name] : children;
 
@@ -53,6 +55,7 @@ export const Icon: React.FC<IconProps> = ({
         stroke={useStroke ? "currentColor" : "none"}
         viewBox="0 0 24 24"
         xmlns="http://www.w3.org/2000/svg"
+        data-testid={testId}
       >
         {iconPath}
       </svg>

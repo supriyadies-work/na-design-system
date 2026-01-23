@@ -6,6 +6,7 @@ interface SkeletonProps {
   height?: string;
   className?: string;
   variant?: "text" | "circular" | "rectangular";
+  testId?: string;
 }
 
 export const Skeleton: React.FC<SkeletonProps> = ({
@@ -13,6 +14,7 @@ export const Skeleton: React.FC<SkeletonProps> = ({
   height,
   className,
   variant = "rectangular",
+  testId,
 }) => {
   const baseStyles = "animate-pulse bg-neutral-200 dark:bg-neutral-700";
 
@@ -28,6 +30,7 @@ export const Skeleton: React.FC<SkeletonProps> = ({
       style={{ width, height }}
       aria-busy="true"
       aria-label="Loading content"
+      data-testid={testId}
     />
   );
 };

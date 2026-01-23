@@ -10,6 +10,7 @@ interface CheckboxProps extends Omit<
   label?: string;
   error?: string;
   required?: boolean;
+  testId?: string;
 }
 
 export const Checkbox: React.FC<CheckboxProps> = ({
@@ -18,6 +19,7 @@ export const Checkbox: React.FC<CheckboxProps> = ({
   required = false,
   className,
   id,
+  testId,
   ...props
 }) => {
   const generatedId = useId();
@@ -44,6 +46,7 @@ export const Checkbox: React.FC<CheckboxProps> = ({
           aria-invalid={hasError}
           aria-describedby={hasError ? `${checkboxId}-error` : undefined}
           required={required}
+          data-testid={testId}
           {...props}
         />
         {label && (
@@ -55,6 +58,7 @@ export const Checkbox: React.FC<CheckboxProps> = ({
                 ? "text-error-600 dark:text-error-400"
                 : "text-neutral-700 dark:text-neutral-300"
             )}
+            data-testid={testId ? `${testId}.label` : undefined}
           >
             {label}
             {required && (

@@ -6,6 +6,7 @@ interface BadgeProps {
   variant?: "default" | "primary" | "success" | "warning" | "danger" | "info";
   size?: "sm" | "md" | "lg";
   className?: string;
+  testId?: string;
 }
 
 // Using design tokens via Tailwind classes
@@ -34,6 +35,7 @@ export const Badge: React.FC<BadgeProps> = ({
   variant = "default",
   size = "md",
   className,
+  testId,
 }) => {
   return (
     <span
@@ -47,6 +49,7 @@ export const Badge: React.FC<BadgeProps> = ({
         paddingRight: "10px",
         paddingLeft: "10px",
       }}
+      data-testid={testId}
     >
       {children}
     </span>

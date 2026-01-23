@@ -9,6 +9,7 @@ interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
   helperText?: string;
   required?: boolean;
   options: Array<{ value: string; label: string }>;
+  testId?: string;
 }
 
 export const Select: React.FC<SelectProps> = ({
@@ -19,6 +20,7 @@ export const Select: React.FC<SelectProps> = ({
   className,
   id,
   options,
+  testId,
   ...props
 }) => {
   const generatedId = useId();
@@ -31,6 +33,7 @@ export const Select: React.FC<SelectProps> = ({
         <label
           htmlFor={selectId}
           className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2"
+          data-testid={testId ? `${testId}.label` : undefined}
         >
           {label}
           {required && (
@@ -63,6 +66,7 @@ export const Select: React.FC<SelectProps> = ({
               : undefined
         }
         required={required}
+        data-testid={testId}
         {...props}
       >
         {options.map((option) => (

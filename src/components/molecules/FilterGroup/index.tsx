@@ -11,6 +11,7 @@ interface FilterGroupProps {
   formatOption?: (option: string) => string;
   allLabel?: string;
   className?: string;
+  testId?: string;
 }
 
 export const FilterGroup: React.FC<FilterGroupProps> = ({
@@ -21,14 +22,15 @@ export const FilterGroup: React.FC<FilterGroupProps> = ({
   formatOption,
   allLabel = "All",
   className,
+  testId,
 }) => {
   if (options.length === 0) {
     return null;
   }
 
   return (
-    <div className={cn("flex flex-wrap items-center gap-3", className)}>
-      <Text variant="label" className="text-sm font-medium whitespace-nowrap">
+    <div className={cn("flex flex-wrap items-center gap-3", className)} data-testid={testId}>
+      <Text variant="label" className="text-sm font-medium whitespace-nowrap" testId={testId ? `${testId}.label` : undefined}>
         {label}:
       </Text>
       <div className="flex flex-wrap gap-2">
@@ -38,10 +40,11 @@ export const FilterGroup: React.FC<FilterGroupProps> = ({
           onClick={() => onSelect("all")}
           isActive={selectedValue === "all"}
           className="px-4 py-2 h-10"
+          testId={testId ? `${testId}.filter.all` : undefined}
         >
           {allLabel}
         </Button>
-        {options.map((option) => (
+        {options.map((option, index) => (
           <Button
             key={option}
             variant="filter"
@@ -49,6 +52,7 @@ export const FilterGroup: React.FC<FilterGroupProps> = ({
             onClick={() => onSelect(option)}
             isActive={selectedValue === option}
             className="px-4 py-2 h-10"
+            testId={testId ? `${testId}.filter.${option}.${index}` : undefined}
           >
             {formatOption ? formatOption(option) : option}
           </Button>

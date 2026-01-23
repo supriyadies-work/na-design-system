@@ -7,6 +7,8 @@ export interface LoadingScreenProps {
   message?: string;
   /** Optional class name for the outer wrapper */
   className?: string;
+  /** Test ID for testing */
+  testId?: string;
 }
 
 /**
@@ -16,6 +18,7 @@ export interface LoadingScreenProps {
 export const LoadingScreen: React.FC<LoadingScreenProps> = ({
   message = "Loading...",
   className,
+  testId,
 }) => {
   return (
     <div
@@ -23,9 +26,10 @@ export const LoadingScreen: React.FC<LoadingScreenProps> = ({
         "min-h-screen bg-white dark:bg-black flex items-center justify-center",
         className
       )}
+      data-testid={testId}
     >
       <div className="text-center">
-        <Spinner size="lg" label={message} />
+        <Spinner size="lg" label={message} testId={testId ? `${testId}.spinner` : undefined} />
       </div>
     </div>
   );

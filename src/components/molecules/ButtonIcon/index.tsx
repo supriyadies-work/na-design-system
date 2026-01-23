@@ -15,6 +15,7 @@ interface ButtonIconProps {
   href?: string;
   iconFill?: boolean;
   iconSize?: "sm" | "md" | "lg" | "xl";
+  testId?: string;
 }
 
 /**
@@ -32,6 +33,7 @@ export const ButtonIcon: React.FC<ButtonIconProps> = ({
   href,
   iconFill = false,
   iconSize = "md",
+  testId,
 }) => {
   // Determine text color based on variant and custom className
   // Dark backgrounds (primary, danger, custom dark bg) -> white text
@@ -61,9 +63,10 @@ export const ButtonIcon: React.FC<ButtonIconProps> = ({
       className={cn("inline-flex items-center gap-2", className)}
       onClick={onClick}
       href={href}
+      testId={testId}
     >
-      <Icon name={icon} size={iconSize} fill={iconFill} />
-      <Text variant="body" className={cn("font-medium", textColorClass)}>
+      <Icon name={icon} size={iconSize} fill={iconFill} testId={testId ? `${testId}.icon` : undefined} />
+      <Text variant="body" className={cn("font-medium", textColorClass)} testId={testId ? `${testId}.label` : undefined}>
         {label}
       </Text>
     </Button>

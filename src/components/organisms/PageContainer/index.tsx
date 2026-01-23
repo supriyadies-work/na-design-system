@@ -5,6 +5,7 @@ interface PageContainerProps {
   children: React.ReactNode;
   className?: string;
   maxWidth?: "sm" | "md" | "lg" | "xl" | "2xl" | "full";
+  testId?: string;
 }
 
 const maxWidthStyles = {
@@ -20,6 +21,7 @@ export const PageContainer: React.FC<PageContainerProps> = ({
   children,
   className,
   maxWidth = "2xl",
+  testId,
 }) => {
   return (
     <div
@@ -28,6 +30,7 @@ export const PageContainer: React.FC<PageContainerProps> = ({
         maxWidthStyles[maxWidth],
         className
       )}
+      data-testid={testId}
     >
       {children}
     </div>

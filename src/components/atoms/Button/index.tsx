@@ -22,6 +22,7 @@ interface ButtonProps {
   disabled?: boolean;
   isActive?: boolean;
   hideFocusRing?: boolean;
+  testId?: string;
 }
 
 // Using design tokens via Tailwind classes
@@ -66,6 +67,7 @@ export const Button: React.FC<ButtonProps> = ({
   disabled = false,
   isActive = false,
   hideFocusRing = false,
+  testId,
 }) => {
   const focusRingStyles = hideFocusRing
     ? "focus:outline-none focus:ring-0 focus:ring-offset-0"
@@ -100,6 +102,7 @@ export const Button: React.FC<ButtonProps> = ({
         onClick={onClick}
         onMouseEnter={onMouseEnter}
         onFocus={onFocus}
+        data-testid={testId}
       >
         {children}
       </Link>
@@ -115,6 +118,7 @@ export const Button: React.FC<ButtonProps> = ({
       disabled={disabled}
       className={classes}
       aria-disabled={disabled}
+      data-testid={testId}
     >
       {children}
     </button>

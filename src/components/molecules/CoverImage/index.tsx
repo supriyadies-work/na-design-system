@@ -11,6 +11,7 @@ interface CoverImageProps {
   containerClassName?: string;
   priority?: boolean;
   sizes?: string;
+  testId?: string;
 }
 
 /**
@@ -25,6 +26,7 @@ export const CoverImage: React.FC<CoverImageProps> = ({
   containerClassName,
   priority = false,
   sizes = "100vw",
+  testId,
 }) => {
   return (
     <div
@@ -32,6 +34,7 @@ export const CoverImage: React.FC<CoverImageProps> = ({
         "w-full -mx-4 md:-mx-8 lg:-mx-16 xl:-mx-32 mb-12",
         containerClassName
       )}
+      data-testid={testId}
     >
       <div className="relative w-full h-[60vh] min-h-[400px]">
         <Image
@@ -42,6 +45,7 @@ export const CoverImage: React.FC<CoverImageProps> = ({
           priority={priority}
           sizes={sizes || "(max-width: 640px) 100vw, (max-width: 1024px) 90vw, 1200px"}
           quality={90}
+          testId={testId ? `${testId}.image` : undefined}
         />
       </div>
     </div>

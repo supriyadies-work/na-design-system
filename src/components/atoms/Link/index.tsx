@@ -11,6 +11,7 @@ interface LinkProps {
   onClick?: () => void;
   onMouseEnter?: () => void;
   onFocus?: () => void;
+  testId?: string;
 }
 
 const variantStyles = {
@@ -31,6 +32,7 @@ export const Link: React.FC<LinkProps> = ({
   onClick,
   onMouseEnter,
   onFocus,
+  testId,
 }) => {
   const classes = cn(
     "transition-colors underline underline-offset-1",
@@ -51,6 +53,7 @@ export const Link: React.FC<LinkProps> = ({
         aria-label={
           typeof children === "string" ? undefined : `External link: ${href}`
         }
+        data-testid={testId}
       >
         {children}
       </a>
@@ -64,6 +67,7 @@ export const Link: React.FC<LinkProps> = ({
       onClick={onClick}
       onMouseEnter={onMouseEnter}
       onFocus={onFocus}
+      data-testid={testId}
     >
       {children}
     </NextLink>

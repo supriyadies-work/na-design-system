@@ -10,6 +10,7 @@ interface SwitchProps extends Omit<
   label?: string;
   error?: string;
   required?: boolean;
+  testId?: string;
 }
 
 export const Switch: React.FC<SwitchProps> = ({
@@ -18,6 +19,7 @@ export const Switch: React.FC<SwitchProps> = ({
   required = false,
   className,
   id,
+  testId,
   ...props
 }) => {
   const generatedId = useId();
@@ -38,6 +40,7 @@ export const Switch: React.FC<SwitchProps> = ({
             aria-invalid={hasError}
             aria-describedby={hasError ? `${switchId}-error` : undefined}
             required={required}
+            data-testid={testId}
             {...props}
           />
           <div
@@ -59,6 +62,7 @@ export const Switch: React.FC<SwitchProps> = ({
                 ? "text-error-600 dark:text-error-400"
                 : "text-neutral-700 dark:text-neutral-300"
             )}
+            data-testid={testId ? `${testId}.label` : undefined}
           >
             {label}
             {required && (

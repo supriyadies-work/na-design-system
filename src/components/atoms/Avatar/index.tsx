@@ -9,6 +9,7 @@ interface AvatarProps {
   size?: "sm" | "md" | "lg" | "xl";
   className?: string;
   priority?: boolean; // Allow priority loading for critical avatars (e.g., in header)
+  testId?: string;
 }
 
 const sizeStyles = {
@@ -25,6 +26,7 @@ export const Avatar: React.FC<AvatarProps> = ({
   size = "md",
   className,
   priority = false,
+  testId,
 }) => {
   const initials = name
     ?.split(" ")
@@ -45,6 +47,7 @@ export const Avatar: React.FC<AvatarProps> = ({
         sizeStyles[size],
         className
       )}
+      data-testid={testId}
     >
       {src ? (
         <Image
@@ -55,9 +58,10 @@ export const Avatar: React.FC<AvatarProps> = ({
           sizes={sizesValue}
           priority={priority}
           quality={85}
+          testId={testId ? `${testId}.image` : undefined}
         />
       ) : (
-        <span>{initials || "?"}</span>
+        <span data-testid={testId ? `${testId}.initials` : undefined}>{initials || "?"}</span>
       )}
     </div>
   );

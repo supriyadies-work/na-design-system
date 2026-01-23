@@ -8,6 +8,7 @@ interface TextareaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement
   error?: string;
   helperText?: string;
   required?: boolean;
+  testId?: string;
 }
 
 export const Textarea: React.FC<TextareaProps> = ({
@@ -17,6 +18,7 @@ export const Textarea: React.FC<TextareaProps> = ({
   required = false,
   className,
   id,
+  testId,
   ...props
 }) => {
   const generatedId = useId();
@@ -29,6 +31,7 @@ export const Textarea: React.FC<TextareaProps> = ({
         <label
           htmlFor={textareaId}
           className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2"
+          data-testid={testId ? `${testId}.label` : undefined}
         >
           {label}
           {required && (
@@ -62,6 +65,7 @@ export const Textarea: React.FC<TextareaProps> = ({
               : undefined
         }
         required={required}
+        data-testid={testId}
         {...props}
       />
       {error && (

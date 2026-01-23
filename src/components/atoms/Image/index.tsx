@@ -20,6 +20,7 @@ interface ImageProps {
   onError?: () => void;
   onClick?: (e: React.MouseEvent<HTMLImageElement>) => void;
   suppressHydrationWarning?: boolean;
+  testId?: string;
 }
 
 export const Image: React.FC<ImageProps> = ({
@@ -38,6 +39,7 @@ export const Image: React.FC<ImageProps> = ({
   onError,
   onClick,
   suppressHydrationWarning,
+  testId,
 }) => {
   // For external images, use conditional optimization:
   // - Desktop: unoptimized (faster, desktop has bandwidth)
@@ -70,6 +72,7 @@ export const Image: React.FC<ImageProps> = ({
         onError={onError}
         onClick={onClick}
         suppressHydrationWarning={suppressHydrationWarning}
+        data-testid={testId}
       />
     );
   }
@@ -90,6 +93,7 @@ export const Image: React.FC<ImageProps> = ({
       onError={onError}
       onClick={onClick}
       suppressHydrationWarning={suppressHydrationWarning}
+      data-testid={testId}
     />
   );
 };

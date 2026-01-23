@@ -6,6 +6,7 @@ interface CardProps {
   className?: string;
   padding?: "none" | "sm" | "md" | "lg";
   hover?: boolean;
+  testId?: string;
 }
 
 const paddingStyles = {
@@ -20,6 +21,7 @@ export const Card: React.FC<CardProps> = ({
   className,
   padding = "md",
   hover = false,
+  testId,
 }) => {
   return (
     <div
@@ -29,6 +31,7 @@ export const Card: React.FC<CardProps> = ({
         hover && "hover:shadow-lg transition-shadow",
         className
       )}
+      data-testid={testId}
     >
       {children}
     </div>

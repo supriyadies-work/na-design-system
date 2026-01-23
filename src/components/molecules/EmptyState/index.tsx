@@ -19,6 +19,7 @@ interface EmptyStateProps {
   icon?: React.ReactNode;
   image?: string;
   showDefaultImage?: boolean;
+  testId?: string;
 }
 
 /**
@@ -34,6 +35,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
   icon,
   image,
   showDefaultImage = true,
+  testId,
 }) => {
   const { theme, resolvedTheme } = useTheme();
   const [mounted, setMounted] = React.useState(false);
@@ -53,21 +55,22 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
   const isDarkMode = mounted && (resolvedTheme === "dark" || theme === "dark");
 
   return (
-    <div className={cn("py-20 text-center", className)}>
-      {shouldShowIcon && <div className="mb-4 flex justify-center">{icon}</div>}
+    <div className={cn("py-20 text-center", className)} data-testid={testId}>
+      {shouldShowIcon && <div className="mb-4 flex justify-center" data-testid={testId ? `${testId}.icon` : undefined}>{icon}</div>}
       {shouldShowCustomImage && (
-        <div className="mb-4 flex justify-center">
+        <div className="mb-4 flex justify-center" data-testid={testId ? `${testId}.image` : undefined}>
           <Image
             src={image}
             alt="Empty state"
             width={350}
             height={350}
             className="mx-auto"
+            testId={testId ? `${testId}.image` : undefined}
           />
         </div>
       )}
       {shouldShowDefaultImage && (
-        <div className="mb-4 flex justify-center">
+        <div className="mb-4 flex justify-center" data-testid={testId ? `${testId}.image` : undefined}>
           {mounted ? (
             <Image
               src={
@@ -79,6 +82,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
               width={350}
               height={350}
               className="mx-auto"
+              testId={testId ? `${testId}.image` : undefined}
             />
           ) : (
             // Fallback during SSR to prevent hydration mismatch
@@ -88,17 +92,19 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
               width={350}
               height={350}
               className="mx-auto"
+              testId={testId ? `${testId}.image` : undefined}
             />
           )}
         </div>
       )}
-      <Text variant="body" className="text-lg mb-4">
+      <Text variant="body" className="text-lg mb-4" testId={testId ? `${testId}.title` : undefined}>
         {title}
       </Text>
       {description && (
         <Text
           variant="small"
           className="text-neutral-500 dark:text-neutral-400 mb-4"
+          testId={testId ? `${testId}.description` : undefined}
         >
           {description}
         </Text>
@@ -109,6 +115,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
           variant={action.variant || "primary"}
           size="md"
           className="mt-4"
+          testId={testId ? `${testId}.action` : undefined}
         >
           {action.label}
         </Button>

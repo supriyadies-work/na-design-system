@@ -6,6 +6,7 @@ interface ButtonGroupProps {
   className?: string;
   orientation?: "horizontal" | "vertical";
   spacing?: "sm" | "md" | "lg";
+  testId?: string;
 }
 
 const spacingStyles = {
@@ -19,6 +20,7 @@ export const ButtonGroup: React.FC<ButtonGroupProps> = ({
   className,
   orientation = "horizontal",
   spacing = "md",
+  testId,
 }) => {
   return (
     <div
@@ -29,8 +31,16 @@ export const ButtonGroup: React.FC<ButtonGroupProps> = ({
         className
       )}
       role="group"
+      data-testid={testId}
     >
-      {children}
+      {React.Children.map(children, (child, index) => {
+        if (React.isValidElement(child)) {
+          return React.cloneElement(child as React.ReactElement<any>, {
+            testId: testId ? `${testId}.button.${index}` : undefined,
+          });
+        }
+        return child;
+      })}
     </div>
   );
 };

@@ -8,6 +8,7 @@ interface SearchInputProps {
   onChange: (value: string) => void;
   placeholder?: string;
   className?: string;
+  testId?: string;
 }
 
 export const SearchInput: React.FC<SearchInputProps> = ({
@@ -15,12 +16,14 @@ export const SearchInput: React.FC<SearchInputProps> = ({
   onChange,
   placeholder = "Search...",
   className,
+  testId,
 }) => {
   return (
-    <div className={cn("relative", className)}>
+    <div className={cn("relative", className)} data-testid={testId}>
       <Icon
         size="md"
         className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400 dark:text-neutral-500"
+        testId={testId ? `${testId}.icon` : undefined}
       >
         <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path
@@ -37,6 +40,7 @@ export const SearchInput: React.FC<SearchInputProps> = ({
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
         className="pl-10"
+        testId={testId ? `${testId}.input` : undefined}
       />
     </div>
   );

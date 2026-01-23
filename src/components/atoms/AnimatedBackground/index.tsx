@@ -2,10 +2,12 @@ import { useEffect, useRef, useState } from "react";
 
 interface AnimatedBackgroundProps {
   className?: string;
+  testId?: string;
 }
 
 const AnimatedBackground: React.FC<AnimatedBackgroundProps> = ({
   className = "",
+  testId,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationFrameRef = useRef<number | undefined>(undefined);
@@ -503,6 +505,7 @@ const AnimatedBackground: React.FC<AnimatedBackgroundProps> = ({
       ref={canvasRef}
       className={`absolute inset-0 w-full h-full ${className}`}
       style={{ zIndex: 0, pointerEvents: "auto" }}
+      data-testid={testId}
     />
   );
 };

@@ -5,6 +5,7 @@ interface SpinnerProps {
   size?: "sm" | "md" | "lg";
   className?: string;
   label?: string;
+  testId?: string;
 }
 
 const sizeStyles = {
@@ -17,9 +18,10 @@ export const Spinner: React.FC<SpinnerProps> = ({
   size = "md",
   className,
   label,
+  testId,
 }) => {
   return (
-    <div className="flex flex-col items-center justify-center">
+    <div className="flex flex-col items-center justify-center" data-testid={testId}>
       <div
         className={cn(
           "animate-spin rounded-full border-neutral-900 dark:border-white",

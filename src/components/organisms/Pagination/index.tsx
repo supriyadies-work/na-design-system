@@ -10,6 +10,7 @@ interface PaginationProps {
   className?: string;
   showPageNumbers?: boolean;
   maxVisiblePages?: number;
+  testId?: string;
 }
 
 export const Pagination: React.FC<PaginationProps> = ({
@@ -19,6 +20,7 @@ export const Pagination: React.FC<PaginationProps> = ({
   className,
   showPageNumbers = true,
   maxVisiblePages = 5,
+  testId,
 }) => {
   if (totalPages <= 1) return null;
 
@@ -60,6 +62,7 @@ export const Pagination: React.FC<PaginationProps> = ({
       className={cn("flex items-center justify-center gap-2", className)}
       role="navigation"
       aria-label="Pagination"
+      data-testid={testId}
     >
       <Button
         variant="outline"
@@ -68,6 +71,7 @@ export const Pagination: React.FC<PaginationProps> = ({
         disabled={currentPage === 1}
         aria-label="Previous page"
         className="px-3 py-2 min-w-[40px] h-10"
+        testId={testId ? `${testId}.prevButton` : undefined}
       >
         <svg
           className="w-5 h-5"
@@ -109,6 +113,7 @@ export const Pagination: React.FC<PaginationProps> = ({
               aria-label={`Page ${pageNum}`}
               aria-current={isActive ? "page" : undefined}
               className="px-4 py-2 min-w-[40px] h-10 text-base"
+              testId={testId ? `${testId}.page.${pageNum}` : undefined}
             >
               {pageNum}
             </Button>
@@ -122,6 +127,7 @@ export const Pagination: React.FC<PaginationProps> = ({
         disabled={currentPage === totalPages}
         aria-label="Next page"
         className="px-3 py-2 min-w-[40px] h-10"
+        testId={testId ? `${testId}.nextButton` : undefined}
       >
         <svg
           className="w-5 h-5"
@@ -141,6 +147,7 @@ export const Pagination: React.FC<PaginationProps> = ({
       <Text
         variant="body"
         className="ml-4 text-base text-neutral-600 dark:text-neutral-400"
+        testId={testId ? `${testId}.info` : undefined}
       >
         Page {currentPage} of {totalPages}
       </Text>

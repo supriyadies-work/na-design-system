@@ -4,11 +4,13 @@ import { cn } from "@na-design-system/utils/cn";
 interface DividerProps {
   orientation?: "horizontal" | "vertical";
   className?: string;
+  testId?: string;
 }
 
 export const Divider: React.FC<DividerProps> = ({
   orientation = "horizontal",
   className,
+  testId,
 }) => {
   if (orientation === "vertical") {
     return (
@@ -19,6 +21,7 @@ export const Divider: React.FC<DividerProps> = ({
         )}
         role="separator"
         aria-orientation="vertical"
+        data-testid={testId}
       />
     );
   }
@@ -31,6 +34,7 @@ export const Divider: React.FC<DividerProps> = ({
       )}
       role="separator"
       aria-orientation="horizontal"
+      data-testid={testId}
     />
   );
 };
