@@ -56,9 +56,19 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
 
   return (
     <div className={cn("py-20 text-center", className)} data-testid={testId}>
-      {shouldShowIcon && <div className="mb-4 flex justify-center" data-testid={testId ? `${testId}.icon` : undefined}>{icon}</div>}
+      {shouldShowIcon && (
+        <div
+          className="mb-4 flex justify-center"
+          data-testid={testId ? `${testId}.icon` : undefined}
+        >
+          {icon}
+        </div>
+      )}
       {shouldShowCustomImage && (
-        <div className="mb-4 flex justify-center" data-testid={testId ? `${testId}.image` : undefined}>
+        <div
+          className="mb-4 flex justify-center"
+          data-testid={testId ? `${testId}.image` : undefined}
+        >
           <Image
             src={image}
             alt="Empty state"
@@ -70,7 +80,10 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
         </div>
       )}
       {shouldShowDefaultImage && (
-        <div className="mb-4 flex justify-center" data-testid={testId ? `${testId}.image` : undefined}>
+        <div
+          className="mb-4 flex justify-center"
+          data-testid={testId ? `${testId}.image` : undefined}
+        >
           {mounted ? (
             <Image
               src={
@@ -97,7 +110,11 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
           )}
         </div>
       )}
-      <Text variant="body" className="text-lg mb-4" testId={testId ? `${testId}.title` : undefined}>
+      <Text
+        variant="body"
+        className="text-lg mb-4"
+        testId={testId ? `${testId}.title` : undefined}
+      >
         {title}
       </Text>
       {description && (

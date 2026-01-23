@@ -45,10 +45,10 @@ export const Image: React.FC<ImageProps> = ({
   // - Desktop: unoptimized (faster, desktop has bandwidth)
   // - Mobile: optimized (smaller file size, mobile needs compression)
   const isExternal = src.startsWith("http://") || src.startsWith("https://");
-  
+
   // Always optimize if explicitly requested, or if it's not external
   let shouldOptimize = !unoptimized && !isExternal;
-  
+
   // For external images, optimize on mobile to reduce file size
   if (isExternal && typeof window !== "undefined") {
     // Check if mobile (width < 1024px) - optimize for mobile

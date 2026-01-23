@@ -24,12 +24,16 @@ export const LoadingScreen: React.FC<LoadingScreenProps> = ({
     <div
       className={cn(
         "min-h-screen bg-white dark:bg-black flex items-center justify-center",
-        className
+        className,
       )}
       data-testid={testId}
     >
       <div className="text-center">
-        <Spinner size="lg" label={message} testId={testId ? `${testId}.spinner` : undefined} />
+        <Spinner
+          size="lg"
+          label={message}
+          testId={testId ? `${testId}.spinner` : undefined}
+        />
       </div>
     </div>
   );

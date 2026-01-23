@@ -66,7 +66,11 @@ export const TabContent: React.FC<TabContentProps> = ({
           testId={testId ? `${testId}.radioGroup` : undefined}
         />
         {onViewAllClick && (
-          <Button variant="outline" onClick={onViewAllClick} testId={testId ? `${testId}.viewAllButton` : undefined}>
+          <Button
+            variant="outline"
+            onClick={onViewAllClick}
+            testId={testId ? `${testId}.viewAllButton` : undefined}
+          >
             View All
             <Icon name="chevronRight" className="w-4 h-4" />
           </Button>

@@ -56,11 +56,16 @@ export const Text = React.forwardRef<HTMLElement, TextProps>(
     const baseStyles = variantStyles[variant];
 
     return (
-      <Component ref={ref as any} className={cn(baseStyles, className)} style={style} data-testid={testId}>
+      <Component
+        ref={ref as any}
+        className={cn(baseStyles, className)}
+        style={style}
+        data-testid={testId}
+      >
         {children}
       </Component>
     );
-  }
+  },
 );
 
 Text.displayName = "Text";

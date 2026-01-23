@@ -106,7 +106,7 @@ const AnimatedBackground: React.FC<AnimatedBackgroundProps> = ({
     window.addEventListener(
       "cursorPosition",
       handleCursorPosition as EventListener,
-      { passive: true }
+      { passive: true },
     );
 
     // Fallback: use window events if custom cursor is not available
@@ -351,7 +351,7 @@ const AnimatedBackground: React.FC<AnimatedBackgroundProps> = ({
               : 1 + (1 - normalizedDistance) * 0.5;
           particle.opacity = Math.min(
             particle.opacity + force * 4,
-            isDark ? 0.9 : 0.7
+            isDark ? 0.9 : 0.7,
           );
 
           // Store original radius for size animation
@@ -404,7 +404,7 @@ const AnimatedBackground: React.FC<AnimatedBackgroundProps> = ({
         ctx.arc(particle.x, particle.y, particle.radius, 0, 2 * Math.PI, false);
         ctx.fillStyle = particle.color.replace(
           /[\d\.]+\)$/g,
-          `${particle.opacity})`
+          `${particle.opacity})`,
         );
         ctx.fill();
 
@@ -428,7 +428,7 @@ const AnimatedBackground: React.FC<AnimatedBackgroundProps> = ({
             const lineOpacity = (1 - distance / connectionDistance) * 0.2;
             ctx.strokeStyle = particle.color.replace(
               /[\d\.]+\)$/g,
-              `${lineOpacity})`
+              `${lineOpacity})`,
             );
             ctx.lineWidth = 0.5;
             ctx.stroke();
@@ -456,7 +456,7 @@ const AnimatedBackground: React.FC<AnimatedBackgroundProps> = ({
             const opacity = (1 - distance / maxDistance) * 0.15;
             ctx.strokeStyle = particle.color.replace(
               /[\d\.]+\)$/g,
-              `${opacity})`
+              `${opacity})`,
             );
             ctx.lineWidth = 0.5;
             ctx.stroke();
@@ -470,7 +470,7 @@ const AnimatedBackground: React.FC<AnimatedBackgroundProps> = ({
         0,
         0,
         canvasWidth,
-        canvasHeight
+        canvasHeight,
       );
       gradient.addColorStop(0, gradientColors[0]);
       gradient.addColorStop(0.5, gradientColors[1]);
@@ -488,7 +488,7 @@ const AnimatedBackground: React.FC<AnimatedBackgroundProps> = ({
       window.removeEventListener("resize", resizeCanvas);
       window.removeEventListener(
         "cursorPosition",
-        handleCursorPosition as EventListener
+        handleCursorPosition as EventListener,
       );
       window.removeEventListener("mousemove", handleMouseMove);
       canvas.removeEventListener("mouseenter", handleMouseEnter);
@@ -511,4 +511,3 @@ const AnimatedBackground: React.FC<AnimatedBackgroundProps> = ({
 };
 
 export default AnimatedBackground;
-

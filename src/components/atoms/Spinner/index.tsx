@@ -21,12 +21,15 @@ export const Spinner: React.FC<SpinnerProps> = ({
   testId,
 }) => {
   return (
-    <div className="flex flex-col items-center justify-center" data-testid={testId}>
+    <div
+      className="flex flex-col items-center justify-center"
+      data-testid={testId}
+    >
       <div
         className={cn(
           "animate-spin rounded-full border-neutral-900 dark:border-white",
           sizeStyles[size],
-          className
+          className,
         )}
         role="status"
         aria-label={label || "Loading"}

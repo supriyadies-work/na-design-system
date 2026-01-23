@@ -33,7 +33,7 @@ export const GlassRadioGroup: React.FC<GlassRadioGroupProps> = ({
     if (!gliderRef.current || !containerRef.current) return;
 
     const selectedIndex = options.findIndex(
-      (opt) => opt.value === selectedValue
+      (opt) => opt.value === selectedValue,
     );
     if (selectedIndex === -1) return;
 
@@ -72,9 +72,18 @@ export const GlassRadioGroup: React.FC<GlassRadioGroupProps> = ({
             checked={selectedValue === option.value}
             onChange={() => onChange(option.value)}
             className="sr-only"
-            data-testid={testId ? `${testId}.radio.${option.id}.${index}` : undefined}
+            data-testid={
+              testId ? `${testId}.radio.${option.id}.${index}` : undefined
+            }
           />
-          <label htmlFor={option.id} data-testid={testId ? `${testId}.label.${option.id}.${index}` : undefined}>{option.label}</label>
+          <label
+            htmlFor={option.id}
+            data-testid={
+              testId ? `${testId}.label.${option.id}.${index}` : undefined
+            }
+          >
+            {option.label}
+          </label>
         </React.Fragment>
       ))}
     </div>

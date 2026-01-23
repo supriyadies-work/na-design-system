@@ -28,7 +28,7 @@ export const PageContainer: React.FC<PageContainerProps> = ({
       className={cn(
         "w-full px-4 laptop:px-0 mx-auto py-8",
         maxWidthStyles[maxWidth],
-        className
+        className,
       )}
       data-testid={testId}
     >

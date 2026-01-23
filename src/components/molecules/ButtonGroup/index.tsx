@@ -28,7 +28,7 @@ export const ButtonGroup: React.FC<ButtonGroupProps> = ({
         "flex",
         orientation === "horizontal" ? "flex-row" : "flex-col",
         spacingStyles[spacing],
-        className
+        className,
       )}
       role="group"
       data-testid={testId}

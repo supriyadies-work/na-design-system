@@ -91,7 +91,7 @@ export const Button: React.FC<ButtonProps> = ({
     variantStyles[variant],
     variant === "text" ? textSizeStyles[size] : sizeStyles[size],
     activeStyles,
-    className
+    className,
   );
 
   if (href) {

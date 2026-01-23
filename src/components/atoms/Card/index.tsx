@@ -29,7 +29,7 @@ export const Card: React.FC<CardProps> = ({
         "bg-white dark:bg-neutral-800 rounded-xl shadow-sm border border-neutral-200 dark:border-neutral-700",
         paddingStyles[padding],
         hover && "hover:shadow-lg transition-shadow",
-        className
+        className,
       )}
       data-testid={testId}
     >

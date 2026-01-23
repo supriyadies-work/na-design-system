@@ -1,6 +1,9 @@
 import React from "react";
 import { Input, Textarea, Text } from "@na-design-system/components/atoms";
-import { validateField, ValidationRule } from "@na-design-system/utils/validation";
+import {
+  validateField,
+  ValidationRule,
+} from "@na-design-system/utils/validation";
 
 interface FormFieldProps {
   label: string;
@@ -8,7 +11,7 @@ interface FormFieldProps {
   type?: "text" | "email" | "password" | "textarea";
   value: string;
   onChange: (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => void;
   placeholder?: string;
   required?: boolean;
@@ -35,7 +38,7 @@ export const FormField: React.FC<FormFieldProps> = ({
   const [touched, setTouched] = React.useState(false);
 
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => {
     onChange(e);
     setTouched(true);
@@ -64,7 +67,11 @@ export const FormField: React.FC<FormFieldProps> = ({
 
   return (
     <div className={`mb-4 ${className}`} data-testid={testId}>
-      <label htmlFor={name} className="block mb-2" data-testid={testId ? `${testId}.label` : undefined}>
+      <label
+        htmlFor={name}
+        className="block mb-2"
+        data-testid={testId ? `${testId}.label` : undefined}
+      >
         <Text variant="body" className="font-medium">
           {label}
           {required && (
@@ -101,7 +108,11 @@ export const FormField: React.FC<FormFieldProps> = ({
         />
       )}
       {error && touched && (
-        <span role="alert" className="text-error-500 mt-1 text-sm" data-testid={testId ? `${testId}.error` : undefined}>
+        <span
+          role="alert"
+          className="text-error-500 mt-1 text-sm"
+          data-testid={testId ? `${testId}.error` : undefined}
+        >
           {error}
         </span>
       )}

@@ -65,8 +65,17 @@ export const ButtonIcon: React.FC<ButtonIconProps> = ({
       href={href}
       testId={testId}
     >
-      <Icon name={icon} size={iconSize} fill={iconFill} testId={testId ? `${testId}.icon` : undefined} />
-      <Text variant="body" className={cn("font-medium", textColorClass)} testId={testId ? `${testId}.label` : undefined}>
+      <Icon
+        name={icon}
+        size={iconSize}
+        fill={iconFill}
+        testId={testId ? `${testId}.icon` : undefined}
+      />
+      <Text
+        variant="body"
+        className={cn("font-medium", textColorClass)}
+        testId={testId ? `${testId}.label` : undefined}
+      >
         {label}
       </Text>
     </Button>

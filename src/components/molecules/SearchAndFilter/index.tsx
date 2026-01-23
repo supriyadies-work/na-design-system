@@ -48,7 +48,10 @@ export default function SearchAndFilter({
   return (
     <div className="mb-8 space-y-4" data-testid={testId}>
       {/* Search Bar and Filters */}
-      <div className="flex flex-col mob:flex-row gap-4 items-start mob:items-center" data-testid={testId ? `${testId}.controls` : undefined}>
+      <div
+        className="flex flex-col mob:flex-row gap-4 items-start mob:items-center"
+        data-testid={testId ? `${testId}.controls` : undefined}
+      >
         {/* Search Input */}
         <div className="flex-1 w-full mob:w-auto">
           <SearchInput

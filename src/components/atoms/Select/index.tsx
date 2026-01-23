@@ -55,7 +55,7 @@ export const Select: React.FC<SelectProps> = ({
           hasError
             ? "border-error-500 dark:border-error-500"
             : "border-neutral-300 dark:border-neutral-600",
-          className
+          className,
         )}
         aria-invalid={hasError}
         aria-describedby={

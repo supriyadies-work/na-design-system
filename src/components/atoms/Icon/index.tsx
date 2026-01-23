@@ -44,7 +44,7 @@ export const Icon: React.FC<IconProps> = ({
       className={cn(
         "inline-flex items-center justify-center",
         sizeStyles[size],
-        className
+        className,
       )}
       role="img"
       aria-hidden="true"

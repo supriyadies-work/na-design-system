@@ -37,7 +37,7 @@ export const Link: React.FC<LinkProps> = ({
   const classes = cn(
     "transition-colors underline underline-offset-1",
     variantStyles[variant],
-    className
+    className,
   );
 
   if (external || href.startsWith("http")) {

@@ -29,8 +29,15 @@ export const FilterGroup: React.FC<FilterGroupProps> = ({
   }
 
   return (
-    <div className={cn("flex flex-wrap items-center gap-3", className)} data-testid={testId}>
-      <Text variant="label" className="text-sm font-medium whitespace-nowrap" testId={testId ? `${testId}.label` : undefined}>
+    <div
+      className={cn("flex flex-wrap items-center gap-3", className)}
+      data-testid={testId}
+    >
+      <Text
+        variant="label"
+        className="text-sm font-medium whitespace-nowrap"
+        testId={testId ? `${testId}.label` : undefined}
+      >
         {label}:
       </Text>
       <div className="flex flex-wrap gap-2">
@@ -63,4 +70,3 @@ export const FilterGroup: React.FC<FilterGroupProps> = ({
 };
 
 export default FilterGroup;
-

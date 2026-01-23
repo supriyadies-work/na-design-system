@@ -36,7 +36,14 @@ export const Avatar: React.FC<AvatarProps> = ({
     .slice(0, 2);
 
   // Calculate sizes for responsive images
-  const sizesValue = size === "sm" ? "32px" : size === "md" ? "48px" : size === "lg" ? "64px" : "96px";
+  const sizesValue =
+    size === "sm"
+      ? "32px"
+      : size === "md"
+        ? "48px"
+        : size === "lg"
+          ? "64px"
+          : "96px";
 
   return (
     <div
@@ -45,7 +52,7 @@ export const Avatar: React.FC<AvatarProps> = ({
         "bg-gradient-to-br from-primary-400 to-secondary-500",
         "text-white font-bold",
         sizeStyles[size],
-        className
+        className,
       )}
       data-testid={testId}
     >
@@ -61,7 +68,9 @@ export const Avatar: React.FC<AvatarProps> = ({
           testId={testId ? `${testId}.image` : undefined}
         />
       ) : (
-        <span data-testid={testId ? `${testId}.initials` : undefined}>{initials || "?"}</span>
+        <span data-testid={testId ? `${testId}.initials` : undefined}>
+          {initials || "?"}
+        </span>
       )}
     </div>
   );

@@ -32,7 +32,7 @@ export const CoverImage: React.FC<CoverImageProps> = ({
     <div
       className={cn(
         "w-full -mx-4 md:-mx-8 lg:-mx-16 xl:-mx-32 mb-12",
-        containerClassName
+        containerClassName,
       )}
       data-testid={testId}
     >
@@ -43,7 +43,10 @@ export const CoverImage: React.FC<CoverImageProps> = ({
           fill
           className={cn("object-cover", className)}
           priority={priority}
-          sizes={sizes || "(max-width: 640px) 100vw, (max-width: 1024px) 90vw, 1200px"}
+          sizes={
+            sizes ||
+            "(max-width: 640px) 100vw, (max-width: 1024px) 90vw, 1200px"
+          }
           quality={90}
           testId={testId ? `${testId}.image` : undefined}
         />

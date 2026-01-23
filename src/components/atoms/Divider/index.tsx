@@ -17,7 +17,7 @@ export const Divider: React.FC<DividerProps> = ({
       <div
         className={cn(
           "w-px h-full bg-neutral-200 dark:bg-neutral-700",
-          className
+          className,
         )}
         role="separator"
         aria-orientation="vertical"
@@ -30,7 +30,7 @@ export const Divider: React.FC<DividerProps> = ({
     <hr
       className={cn(
         "border-0 border-t border-neutral-200 dark:border-neutral-700",
-        className
+        className,
       )}
       role="separator"
       aria-orientation="horizontal"

@@ -73,7 +73,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
 
       // Find the .ql-editor element
       const editorElement = container.querySelector(
-        ".ql-editor"
+        ".ql-editor",
       ) as HTMLElement;
       if (editorElement) {
         // Try multiple ways to get Quill instance
@@ -197,7 +197,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
               // Try to find editor element
               if (quillRef.current) {
                 editorElement = quillRef.current.querySelector(
-                  ".ql-editor"
+                  ".ql-editor",
                 ) as HTMLElement;
               }
 
@@ -222,10 +222,10 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
             if (!editorElement) {
               console.error(
                 "Editor element (.ql-editor) not found after retries. Container:",
-                quillRef.current
+                quillRef.current,
               );
               setPendingImages((prev) =>
-                prev.filter((img) => img.id !== imageId)
+                prev.filter((img) => img.id !== imageId),
               );
               alert("Editor not ready. Please wait a moment and try again.");
               return;
@@ -286,7 +286,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
                 // Set data attribute after insertion
                 setTimeout(() => {
                   const imgElements = quill.root.querySelectorAll(
-                    `img[src="${dataUrl}"]`
+                    `img[src="${dataUrl}"]`,
                   );
                   if (imgElements.length > 0) {
                     const imgEl = imgElements[0] as HTMLImageElement;
@@ -332,7 +332,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
                 quill.pasteHTML(
                   index,
                   `<img src="${escapedUrl}" data-pending-id="${imageId}" style="max-width: 100%; height: auto; display: block;" />`,
-                  "user"
+                  "user",
                 );
                 quill.setSelection(index + 1);
 
@@ -405,7 +405,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
       };
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [] // Empty dependency array - function never changes
+    [], // Empty dependency array - function never changes
   );
 
   // Quill modules configuration - stable, doesn't recreate on blogSlug change
@@ -438,7 +438,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
         matchVisual: false,
       },
     }),
-    [imageHandler] // Only depends on imageHandler, which is stable
+    [imageHandler], // Only depends on imageHandler, which is stable
   );
 
   // Quill formats

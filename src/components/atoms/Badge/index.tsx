@@ -43,7 +43,7 @@ export const Badge: React.FC<BadgeProps> = ({
         "inline-flex items-center font-medium rounded-full",
         variantStyles[variant],
         sizeStyles[size],
-        className
+        className,
       )}
       style={{
         paddingRight: "10px",
