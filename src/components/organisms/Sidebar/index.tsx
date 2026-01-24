@@ -64,6 +64,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
   openWidth = "200px",
   closedWidth = "80px",
 }) => {
+  // #region agent log
+  if(typeof window!=='undefined'){console.log('[Sidebar] Received props:',{footerItemsCount:footerItems.length,footerItemsIds:footerItems.map(i=>i.id),sidebarOpen});}
+  // #endregion
   const isActive = (path: string, exact?: boolean) => {
     if (exact) {
       return currentPath === path;
@@ -175,9 +178,18 @@ export const Sidebar: React.FC<SidebarProps> = ({
       </nav>
 
       {/* Sidebar Footer */}
+      {(() => {
+        // #region agent log
+        if(typeof window!=='undefined'){console.log('[Sidebar] Footer render check:',{footerItemsLength:footerItems.length,willRender:footerItems.length>0,items:footerItems.map(i=>({id:i.id,label:i.label,hasOnClick:!!i.onClick,hasPath:!!i.path}))});}
+        // #endregion
+        return null;
+      })()}
       {footerItems.length > 0 && (
         <div className="p-4 border-t border-gray-200 dark:border-gray-700 flex-shrink-0 space-y-2">
           {footerItems.map((item) => {
+            // #region agent log
+            if(typeof window!=='undefined'){console.log('[Sidebar] Rendering footer item:',{id:item.id,label:item.label,icon:item.icon,hasOnClick:!!item.onClick,hasPath:!!item.path});}
+            // #endregion
             const content = (
               <div
                 className={cn(

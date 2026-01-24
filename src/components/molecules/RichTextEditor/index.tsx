@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useRef, useMemo, useState, useEffect } from "react";
+import React, { useRef, useMemo, useState, useEffect, useCallback } from "react";
 import dynamic from "next/dynamic";
 import { useTheme } from "next-themes";
 import type { PendingImage } from "@/lib/helpers/pendingImageUpload";
@@ -44,6 +44,10 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
   const quillEditorRef = useRef<any>(null);
   const blogSlugRef = useRef<string | undefined>(blogSlug);
   const [pendingImages, setPendingImages] = useState<PendingImage[]>([]);
+  const [showTooltip, setShowTooltip] = useState(false);
+  const [tooltipPosition, setTooltipPosition] = useState({ top: 0, left: 0 });
+  const [quillReady, setQuillReady] = useState(false);
+  const tooltipRef = useRef<HTMLDivElement>(null);
 
   // Update blogSlug ref when it changes
   useEffect(() => {
@@ -97,6 +101,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
 
         if (quillInstance && quillInstance.root) {
           quillEditorRef.current = quillInstance;
+          setQuillReady(true);
           return true; // Success
         }
       }
@@ -108,10 +113,9 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
 
     // Retry with increasing delays
     const timeouts: NodeJS.Timeout[] = [];
-    [100, 200, 500, 1000].forEach((delay) => {
+    [100, 200, 500, 1000, 1500, 2000].forEach((delay) => {
       const timeoutId = setTimeout(() => {
         if (setupEditor()) {
-          // If successful, clear remaining timeouts
           timeouts.forEach(clearTimeout);
         }
       }, delay);
@@ -136,8 +140,176 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     return () => {
       timeouts.forEach(clearTimeout);
       observer.disconnect();
+      setQuillReady(false);
     };
-  }, [mounted]); // Only run when mounted changes
+  }, [mounted]);
+
+  // Handle text selection and show tooltip (runs when Quill is ready)
+  useEffect(() => {
+    if (!mounted || !quillReady || !quillEditorRef.current) return;
+
+    const quill = quillEditorRef.current;
+    const editorElement = quill.root;
+
+    const updateTooltipPosition = (range: { index: number; length: number }) => {
+      const bounds = quill.getBounds(range.index, range.length);
+      if (!bounds) return;
+
+      // Fixed positioning = viewport coords. Use getBoundingClientRect (no scroll offset).
+      const editorRect = editorElement.getBoundingClientRect();
+      const tooltipTop = editorRect.top + bounds.top - 48;
+      const tooltipLeft = editorRect.left + bounds.left + bounds.width / 2;
+
+      setTooltipPosition({ top: tooltipTop, left: tooltipLeft });
+      setShowTooltip(true);
+    };
+
+    const handleSelectionChange = (range: any) => {
+      if (!range || range.length === 0) {
+        setShowTooltip(false);
+        return;
+      }
+
+      const selectedText = quill.getText(range.index, range.length);
+      if (!selectedText || selectedText.trim().length === 0) {
+        setShowTooltip(false);
+        return;
+      }
+
+      updateTooltipPosition(range);
+    };
+
+    // Quill selection-change: (newRange, oldRange, source)
+    quill.on("selection-change", handleSelectionChange);
+
+    const onMouseUp = () => {
+      requestAnimationFrame(() => {
+        const sel = quill.getSelection(true);
+        if (sel && sel.length > 0) handleSelectionChange(sel);
+      });
+    };
+
+    editorElement.addEventListener("mouseup", onMouseUp);
+    editorElement.addEventListener("keyup", onMouseUp);
+
+    const onScroll = () => {
+      const sel = quill.getSelection(true);
+      if (sel && sel.length > 0) updateTooltipPosition(sel);
+    };
+
+    window.addEventListener("scroll", onScroll, true);
+    editorElement.addEventListener("scroll", onScroll);
+
+    return () => {
+      quill.off("selection-change", handleSelectionChange);
+      editorElement.removeEventListener("mouseup", onMouseUp);
+      editorElement.removeEventListener("keyup", onMouseUp);
+      window.removeEventListener("scroll", onScroll, true);
+      editorElement.removeEventListener("scroll", onScroll);
+    };
+  }, [mounted, quillReady]);
+
+  // Hide tooltip when clicking outside
+  useEffect(() => {
+    if (!showTooltip) return;
+
+    const handleClickOutside = (e: MouseEvent) => {
+      const target = e.target as Node;
+      const alignMenu = document.getElementById("align-menu");
+      const fontMenu = document.getElementById("font-menu");
+      
+      // Close dropdowns if clicking outside
+      if (alignMenu && !alignMenu.contains(target)) {
+        alignMenu.style.display = "none";
+      }
+      if (fontMenu && !fontMenu.contains(target)) {
+        fontMenu.style.display = "none";
+      }
+
+      // Hide tooltip if clicking outside both tooltip and editor
+      if (
+        tooltipRef.current &&
+        !tooltipRef.current.contains(target) &&
+        quillRef.current &&
+        !quillRef.current.contains(target) &&
+        alignMenu &&
+        !alignMenu.contains(target) &&
+        fontMenu &&
+        !fontMenu.contains(target)
+      ) {
+        setShowTooltip(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [showTooltip]);
+
+  // Quick action handlers
+  const handleLink = useCallback(() => {
+    const quill = quillEditorRef.current;
+    if (!quill) return;
+
+    const selection = quill.getSelection(true);
+    if (!selection || selection.length === 0) return;
+
+    const url = prompt("Enter URL:");
+    if (!url) return;
+
+    quill.format("link", url);
+    
+    // Close dropdowns
+    const alignMenu = document.getElementById("align-menu");
+    const fontMenu = document.getElementById("font-menu");
+    if (alignMenu) alignMenu.style.display = "none";
+    if (fontMenu) fontMenu.style.display = "none";
+    
+    setShowTooltip(false);
+  }, []);
+
+  const handleAlign = useCallback((align: string) => {
+    const quill = quillEditorRef.current;
+    if (!quill) return;
+
+    const selection = quill.getSelection(true);
+    if (!selection) return;
+
+    quill.format("align", align);
+    
+    // Close dropdowns
+    const alignMenu = document.getElementById("align-menu");
+    const fontMenu = document.getElementById("font-menu");
+    if (alignMenu) alignMenu.style.display = "none";
+    if (fontMenu) fontMenu.style.display = "none";
+    
+    setShowTooltip(false);
+  }, []);
+
+  const handleFontStyle = useCallback((style: string) => {
+    const quill = quillEditorRef.current;
+    if (!quill) return;
+
+    const selection = quill.getSelection(true);
+    if (!selection) return;
+
+    if (style === "bold") {
+      quill.format("bold", !quill.getFormat(selection).bold);
+    } else if (style === "italic") {
+      quill.format("italic", !quill.getFormat(selection).italic);
+    } else if (style === "underline") {
+      quill.format("underline", !quill.getFormat(selection).underline);
+    }
+    
+    // Close dropdowns
+    const alignMenu = document.getElementById("align-menu");
+    const fontMenu = document.getElementById("font-menu");
+    if (alignMenu) alignMenu.style.display = "none";
+    if (fontMenu) fontMenu.style.display = "none";
+    
+    setShowTooltip(false);
+  }, []);
 
   // Custom image handler
   const imageHandler = useMemo(
@@ -560,7 +732,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
         }
         `}
       `}</style>
-      <div className="rich-text-editor-wrapper">
+      <div className="rich-text-editor-wrapper" style={{ position: "relative" }}>
         <div ref={quillRef} data-testid={testId}>
           <ReactQuill
             theme="snow"
@@ -571,6 +743,305 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
             placeholder={placeholder}
           />
         </div>
+        {/* Selection Tooltip */}
+        {showTooltip && (
+          <div
+            ref={tooltipRef}
+            className="selection-tooltip"
+            style={{
+              position: "fixed",
+              top: `${tooltipPosition.top}px`,
+              left: `${tooltipPosition.left}px`,
+              transform: "translateX(-50%)",
+              zIndex: 1000,
+              display: "flex",
+              gap: "4px",
+              padding: "6px 8px",
+              backgroundColor: isDark ? "#1f2937" : "#ffffff",
+              border: `1px solid ${isDark ? "#374151" : "#e5e7eb"}`,
+              borderRadius: "6px",
+              boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
+            }}
+          >
+            {/* Link Button */}
+            <button
+              onClick={handleLink}
+              className="tooltip-button"
+              title="Add Link"
+              style={{
+                padding: "4px 8px",
+                backgroundColor: "transparent",
+                border: "none",
+                borderRadius: "4px",
+                cursor: "pointer",
+                color: isDark ? "#d1d5db" : "#374151",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: "14px",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = isDark ? "#374151" : "#f3f4f6";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = "transparent";
+              }}
+            >
+              🔗
+            </button>
+
+            {/* Align Text Dropdown */}
+            <div style={{ position: "relative", display: "inline-block" }}>
+              <button
+                className="tooltip-button"
+                title="Align Text"
+                style={{
+                  padding: "4px 8px",
+                  backgroundColor: "transparent",
+                  border: "none",
+                  borderRadius: "4px",
+                  cursor: "pointer",
+                  color: isDark ? "#d1d5db" : "#374151",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: "14px",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = isDark ? "#374151" : "#f3f4f6";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = "transparent";
+                }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  const alignMenu = document.getElementById("align-menu");
+                  const fontMenu = document.getElementById("font-menu");
+                  if (alignMenu) {
+                    alignMenu.style.display = alignMenu.style.display === "block" ? "none" : "block";
+                  }
+                  // Close font menu if open
+                  if (fontMenu) {
+                    fontMenu.style.display = "none";
+                  }
+                }}
+              >
+                ⬌
+              </button>
+              <div
+                id="align-menu"
+                style={{
+                  display: "none",
+                  position: "absolute",
+                  top: "100%",
+                  left: "50%",
+                  transform: "translateX(-50%)",
+                  marginTop: "4px",
+                  backgroundColor: isDark ? "#1f2937" : "#ffffff",
+                  border: `1px solid ${isDark ? "#374151" : "#e5e7eb"}`,
+                  borderRadius: "6px",
+                  boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
+                  padding: "4px",
+                  minWidth: "120px",
+                }}
+              >
+                <button
+                  onClick={() => handleAlign("")}
+                  style={{
+                    width: "100%",
+                    padding: "6px 12px",
+                    textAlign: "left",
+                    backgroundColor: "transparent",
+                    border: "none",
+                    borderRadius: "4px",
+                    cursor: "pointer",
+                    color: isDark ? "#d1d5db" : "#374151",
+                    fontSize: "14px",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = isDark ? "#374151" : "#f3f4f6";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = "transparent";
+                  }}
+                >
+                  ⬅ Left
+                </button>
+                <button
+                  onClick={() => handleAlign("center")}
+                  style={{
+                    width: "100%",
+                    padding: "6px 12px",
+                    textAlign: "left",
+                    backgroundColor: "transparent",
+                    border: "none",
+                    borderRadius: "4px",
+                    cursor: "pointer",
+                    color: isDark ? "#d1d5db" : "#374151",
+                    fontSize: "14px",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = isDark ? "#374151" : "#f3f4f6";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = "transparent";
+                  }}
+                >
+                  ⬌ Center
+                </button>
+                <button
+                  onClick={() => handleAlign("right")}
+                  style={{
+                    width: "100%",
+                    padding: "6px 12px",
+                    textAlign: "left",
+                    backgroundColor: "transparent",
+                    border: "none",
+                    borderRadius: "4px",
+                    cursor: "pointer",
+                    color: isDark ? "#d1d5db" : "#374151",
+                    fontSize: "14px",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = isDark ? "#374151" : "#f3f4f6";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = "transparent";
+                  }}
+                >
+                  ➡ Right
+                </button>
+              </div>
+            </div>
+
+            {/* Font Style Dropdown */}
+            <div style={{ position: "relative", display: "inline-block" }}>
+              <button
+                className="tooltip-button"
+                title="Font Style"
+                style={{
+                  padding: "4px 8px",
+                  backgroundColor: "transparent",
+                  border: "none",
+                  borderRadius: "4px",
+                  cursor: "pointer",
+                  color: isDark ? "#d1d5db" : "#374151",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: "14px",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = isDark ? "#374151" : "#f3f4f6";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = "transparent";
+                }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  const fontMenu = document.getElementById("font-menu");
+                  const alignMenu = document.getElementById("align-menu");
+                  if (fontMenu) {
+                    fontMenu.style.display = fontMenu.style.display === "block" ? "none" : "block";
+                  }
+                  // Close align menu if open
+                  if (alignMenu) {
+                    alignMenu.style.display = "none";
+                  }
+                }}
+              >
+                A
+              </button>
+              <div
+                id="font-menu"
+                style={{
+                  display: "none",
+                  position: "absolute",
+                  top: "100%",
+                  left: "50%",
+                  transform: "translateX(-50%)",
+                  marginTop: "4px",
+                  backgroundColor: isDark ? "#1f2937" : "#ffffff",
+                  border: `1px solid ${isDark ? "#374151" : "#e5e7eb"}`,
+                  borderRadius: "6px",
+                  boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
+                  padding: "4px",
+                  minWidth: "120px",
+                }}
+              >
+                <button
+                  onClick={() => handleFontStyle("bold")}
+                  style={{
+                    width: "100%",
+                    padding: "6px 12px",
+                    textAlign: "left",
+                    backgroundColor: "transparent",
+                    border: "none",
+                    borderRadius: "4px",
+                    cursor: "pointer",
+                    color: isDark ? "#d1d5db" : "#374151",
+                    fontSize: "14px",
+                    fontWeight: "bold",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = isDark ? "#374151" : "#f3f4f6";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = "transparent";
+                  }}
+                >
+                  <strong>Bold</strong>
+                </button>
+                <button
+                  onClick={() => handleFontStyle("italic")}
+                  style={{
+                    width: "100%",
+                    padding: "6px 12px",
+                    textAlign: "left",
+                    backgroundColor: "transparent",
+                    border: "none",
+                    borderRadius: "4px",
+                    cursor: "pointer",
+                    color: isDark ? "#d1d5db" : "#374151",
+                    fontSize: "14px",
+                    fontStyle: "italic",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = isDark ? "#374151" : "#f3f4f6";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = "transparent";
+                  }}
+                >
+                  <em>Italic</em>
+                </button>
+                <button
+                  onClick={() => handleFontStyle("underline")}
+                  style={{
+                    width: "100%",
+                    padding: "6px 12px",
+                    textAlign: "left",
+                    backgroundColor: "transparent",
+                    border: "none",
+                    borderRadius: "4px",
+                    cursor: "pointer",
+                    color: isDark ? "#d1d5db" : "#374151",
+                    fontSize: "14px",
+                    textDecoration: "underline",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = isDark ? "#374151" : "#f3f4f6";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = "transparent";
+                  }}
+                >
+                  <u>Underline</u>
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
