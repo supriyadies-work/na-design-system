@@ -765,6 +765,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
           >
             {/* Link Button */}
             <button
+              type="button"
               onClick={handleLink}
               className="tooltip-button"
               title="Add Link"
@@ -793,6 +794,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
             {/* Align Text Dropdown */}
             <div style={{ position: "relative", display: "inline-block" }}>
               <button
+                type="button"
                 className="tooltip-button"
                 title="Align Text"
                 style={{
@@ -846,6 +848,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
                 }}
               >
                 <button
+                  type="button"
                   onClick={() => handleAlign("")}
                   style={{
                     width: "100%",
@@ -868,6 +871,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
                   ⬅ Left
                 </button>
                 <button
+                  type="button"
                   onClick={() => handleAlign("center")}
                   style={{
                     width: "100%",
@@ -890,6 +894,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
                   ⬌ Center
                 </button>
                 <button
+                  type="button"
                   onClick={() => handleAlign("right")}
                   style={{
                     width: "100%",
@@ -917,6 +922,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
             {/* Font Style Dropdown */}
             <div style={{ position: "relative", display: "inline-block" }}>
               <button
+                type="button"
                 className="tooltip-button"
                 title="Font Style"
                 style={{
@@ -970,6 +976,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
                 }}
               >
                 <button
+                  type="button"
                   onClick={() => handleFontStyle("bold")}
                   style={{
                     width: "100%",
@@ -993,6 +1000,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
                   <strong>Bold</strong>
                 </button>
                 <button
+                  type="button"
                   onClick={() => handleFontStyle("italic")}
                   style={{
                     width: "100%",
@@ -1016,6 +1024,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
                   <em>Italic</em>
                 </button>
                 <button
+                  type="button"
                   onClick={() => handleFontStyle("underline")}
                   style={{
                     width: "100%",
