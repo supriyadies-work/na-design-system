@@ -1,6 +1,6 @@
 {
   "name": "@supriyadies-work/na-design-system",
-  "version": "1.1.27",
+  "version": "1.1.29",
   "description": "Design System package for Nisa Aulia Portfolio",
   "repository": {
     "type": "git",
@@ -23,6 +23,7 @@
     "./components/*": "./dist/js/components/*/index.js",
     "./tokens": "./dist/js/tokens.js",
     "./css": "./dist/css/tokens.css",
+    "./css/scale": "./dist/css/scale.css",
     "./js/tokens": "./dist/js/tokens.js",
     "./utils": "./dist/js/utils/index.js",
     "./assets/*": "./dist/js/assets/*/index.js",

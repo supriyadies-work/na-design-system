@@ -1,0 +1,31 @@
+/**
+ * Scale System CSS Variables
+ * These variables are set dynamically by the scale system
+ * Default values are for nisaaulia scale (multiplier = 1)
+ */
+
+:root {
+  --scale-multiplier: 1;
+  --scale-spacing: 1;
+  --scale-font-size: 1;
+  --scale-line-height: 1;
+  --scale-border-radius: 1;
+}
+
+/**
+ * Scale-aware utility classes
+ * Use these classes to apply scaling to elements
+ */
+
+.scale-spacing {
+  --spacing-multiplier: var(--scale-spacing, 1);
+}
+
+.scale-typography {
+  --font-size-multiplier: var(--scale-font-size, 1);
+  --line-height-multiplier: var(--scale-line-height, 1);
+}
+
+.scale-border-radius {
+  --border-radius-multiplier: var(--scale-border-radius, 1);
+}

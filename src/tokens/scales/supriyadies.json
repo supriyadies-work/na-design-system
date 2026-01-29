@@ -1,0 +1,21 @@
+{
+  "scale": {
+    "name": { "value": "supriyadies" },
+    "multiplier": { "value": "1.25" },
+    "description": { "value": "Larger scale for Supriyadies brand - 25% increase in spacing and typography" },
+    "spacing": {
+      "multiplier": { "value": "1.25" }
+    },
+    "typography": {
+      "fontSize": {
+        "multiplier": { "value": "1.15" }
+      },
+      "lineHeight": {
+        "multiplier": { "value": "1.1" }
+      }
+    },
+    "borderRadius": {
+      "multiplier": { "value": "1.2" }
+    }
+  }
+}

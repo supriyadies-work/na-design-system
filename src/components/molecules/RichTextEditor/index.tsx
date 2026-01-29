@@ -1,6 +1,12 @@
 "use client";
 
-import React, { useRef, useMemo, useState, useEffect, useCallback } from "react";
+import React, {
+  useRef,
+  useMemo,
+  useState,
+  useEffect,
+  useCallback,
+} from "react";
 import dynamic from "next/dynamic";
 import { useTheme } from "next-themes";
 import type { PendingImage } from "@/lib/helpers/pendingImageUpload";
@@ -151,7 +157,10 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     const quill = quillEditorRef.current;
     const editorElement = quill.root;
 
-    const updateTooltipPosition = (range: { index: number; length: number }) => {
+    const updateTooltipPosition = (range: {
+      index: number;
+      length: number;
+    }) => {
       const bounds = quill.getBounds(range.index, range.length);
       if (!bounds) return;
 
@@ -217,7 +226,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
       const target = e.target as Node;
       const alignMenu = document.getElementById("align-menu");
       const fontMenu = document.getElementById("font-menu");
-      
+
       // Close dropdowns if clicking outside
       if (alignMenu && !alignMenu.contains(target)) {
         alignMenu.style.display = "none";
@@ -259,13 +268,13 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     if (!url) return;
 
     quill.format("link", url);
-    
+
     // Close dropdowns
     const alignMenu = document.getElementById("align-menu");
     const fontMenu = document.getElementById("font-menu");
     if (alignMenu) alignMenu.style.display = "none";
     if (fontMenu) fontMenu.style.display = "none";
-    
+
     setShowTooltip(false);
   }, []);
 
@@ -277,13 +286,13 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     if (!selection) return;
 
     quill.format("align", align);
-    
+
     // Close dropdowns
     const alignMenu = document.getElementById("align-menu");
     const fontMenu = document.getElementById("font-menu");
     if (alignMenu) alignMenu.style.display = "none";
     if (fontMenu) fontMenu.style.display = "none";
-    
+
     setShowTooltip(false);
   }, []);
 
@@ -301,13 +310,13 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     } else if (style === "underline") {
       quill.format("underline", !quill.getFormat(selection).underline);
     }
-    
+
     // Close dropdowns
     const alignMenu = document.getElementById("align-menu");
     const fontMenu = document.getElementById("font-menu");
     if (alignMenu) alignMenu.style.display = "none";
     if (fontMenu) fontMenu.style.display = "none";
-    
+
     setShowTooltip(false);
   }, []);
 
@@ -650,89 +659,96 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     );
   }
 
+  const editorStyles = `
+    .rich-text-editor .ql-container {
+      font-size: 16px;
+      min-height: 300px;
+    }
+    .rich-text-editor .ql-editor {
+      min-height: 300px;
+    }
+    .rich-text-editor .ql-editor.ql-blank::before {
+      color: ${isDark ? "#9ca3af" : "#6b7280"};
+      font-style: normal;
+    }
+    ${
+      isDark
+        ? `
+    .rich-text-editor.dark-mode .ql-toolbar {
+      background-color: #1f2937 !important;
+      border-color: #374151 !important;
+    }
+    .rich-text-editor.dark-mode .ql-toolbar .ql-stroke {
+      stroke: #d1d5db !important;
+    }
+    .rich-text-editor.dark-mode .ql-toolbar .ql-fill {
+      fill: #d1d5db !important;
+    }
+    .rich-text-editor.dark-mode .ql-toolbar button:hover,
+    .rich-text-editor.dark-mode .ql-toolbar button.ql-active {
+      background-color: #374151 !important;
+    }
+    .rich-text-editor.dark-mode .ql-toolbar .ql-picker-label {
+      color: #d1d5db !important;
+    }
+    .rich-text-editor.dark-mode .ql-toolbar .ql-picker-options {
+      background-color: #1f2937 !important;
+      border-color: #374151 !important;
+      color: #d1d5db !important;
+    }
+    .rich-text-editor.dark-mode .ql-toolbar .ql-picker-item {
+      color: #d1d5db !important;
+    }
+    .rich-text-editor.dark-mode .ql-container {
+      background-color: #111827 !important;
+      border-color: #374151 !important;
+    }
+    .rich-text-editor.dark-mode .ql-editor {
+      color: #f9fafb !important;
+      background-color: #111827 !important;
+    }
+    .rich-text-editor.dark-mode .ql-editor p,
+    .rich-text-editor.dark-mode .ql-editor h1,
+    .rich-text-editor.dark-mode .ql-editor h2,
+    .rich-text-editor.dark-mode .ql-editor h3,
+    .rich-text-editor.dark-mode .ql-editor h4,
+    .rich-text-editor.dark-mode .ql-editor h5,
+    .rich-text-editor.dark-mode .ql-editor h6,
+    .rich-text-editor.dark-mode .ql-editor li,
+    .rich-text-editor.dark-mode .ql-editor span,
+    .rich-text-editor.dark-mode .ql-editor div {
+      color: #f9fafb !important;
+    }
+    .rich-text-editor.dark-mode .ql-editor.ql-blank::before {
+      color: #9ca3af !important;
+    }
+    `
+        : `
+    .rich-text-editor.light-mode .ql-toolbar {
+      background-color: #f9fafb !important;
+      border-color: #e5e7eb !important;
+    }
+    .rich-text-editor.light-mode .ql-container {
+      background-color: #ffffff !important;
+      border-color: #e5e7eb !important;
+    }
+    .rich-text-editor.light-mode .ql-editor {
+      color: #111827 !important;
+      background-color: #ffffff !important;
+    }
+    `
+    }
+  `;
+
   return (
     <div
       className={`rich-text-editor ${className} ${isDark ? "dark-mode" : "light-mode"}`}
     >
-      <style jsx global>{`
-        .rich-text-editor .ql-container {
-          font-size: 16px;
-          min-height: 300px;
-        }
-        .rich-text-editor .ql-editor {
-          min-height: 300px;
-        }
-        .rich-text-editor .ql-editor.ql-blank::before {
-          color: ${isDark ? "#9ca3af" : "#6b7280"};
-          font-style: normal;
-        }
-        ${isDark
-          ? `
-        .rich-text-editor.dark-mode .ql-toolbar {
-          background-color: #1f2937 !important;
-          border-color: #374151 !important;
-        }
-        .rich-text-editor.dark-mode .ql-toolbar .ql-stroke {
-          stroke: #d1d5db !important;
-        }
-        .rich-text-editor.dark-mode .ql-toolbar .ql-fill {
-          fill: #d1d5db !important;
-        }
-        .rich-text-editor.dark-mode .ql-toolbar button:hover,
-        .rich-text-editor.dark-mode .ql-toolbar button.ql-active {
-          background-color: #374151 !important;
-        }
-        .rich-text-editor.dark-mode .ql-toolbar .ql-picker-label {
-          color: #d1d5db !important;
-        }
-        .rich-text-editor.dark-mode .ql-toolbar .ql-picker-options {
-          background-color: #1f2937 !important;
-          border-color: #374151 !important;
-          color: #d1d5db !important;
-        }
-        .rich-text-editor.dark-mode .ql-toolbar .ql-picker-item {
-          color: #d1d5db !important;
-        }
-        .rich-text-editor.dark-mode .ql-container {
-          background-color: #111827 !important;
-          border-color: #374151 !important;
-        }
-        .rich-text-editor.dark-mode .ql-editor {
-          color: #f9fafb !important;
-          background-color: #111827 !important;
-        }
-        .rich-text-editor.dark-mode .ql-editor p,
-        .rich-text-editor.dark-mode .ql-editor h1,
-        .rich-text-editor.dark-mode .ql-editor h2,
-        .rich-text-editor.dark-mode .ql-editor h3,
-        .rich-text-editor.dark-mode .ql-editor h4,
-        .rich-text-editor.dark-mode .ql-editor h5,
-        .rich-text-editor.dark-mode .ql-editor h6,
-        .rich-text-editor.dark-mode .ql-editor li,
-        .rich-text-editor.dark-mode .ql-editor span,
-        .rich-text-editor.dark-mode .ql-editor div {
-          color: #f9fafb !important;
-        }
-        .rich-text-editor.dark-mode .ql-editor.ql-blank::before {
-          color: #9ca3af !important;
-        }
-        `
-          : `
-        .rich-text-editor.light-mode .ql-toolbar {
-          background-color: #f9fafb !important;
-          border-color: #e5e7eb !important;
-        }
-        .rich-text-editor.light-mode .ql-container {
-          background-color: #ffffff !important;
-          border-color: #e5e7eb !important;
-        }
-        .rich-text-editor.light-mode .ql-editor {
-          color: #111827 !important;
-          background-color: #ffffff !important;
-        }
-        `}
-      `}</style>
-      <div className="rich-text-editor-wrapper" style={{ position: "relative" }}>
+      <style dangerouslySetInnerHTML={{ __html: editorStyles }} />
+      <div
+        className="rich-text-editor-wrapper"
+        style={{ position: "relative" }}
+      >
         <div ref={quillRef} data-testid={testId}>
           <ReactQuill
             theme="snow"
@@ -760,7 +776,8 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
               backgroundColor: isDark ? "#1f2937" : "#ffffff",
               border: `1px solid ${isDark ? "#374151" : "#e5e7eb"}`,
               borderRadius: "6px",
-              boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
+              boxShadow:
+                "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
             }}
           >
             {/* Link Button */}
@@ -782,7 +799,9 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
                 fontSize: "14px",
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = isDark ? "#374151" : "#f3f4f6";
+                e.currentTarget.style.backgroundColor = isDark
+                  ? "#374151"
+                  : "#f3f4f6";
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.backgroundColor = "transparent";
@@ -810,7 +829,9 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
                   fontSize: "14px",
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = isDark ? "#374151" : "#f3f4f6";
+                  e.currentTarget.style.backgroundColor = isDark
+                    ? "#374151"
+                    : "#f3f4f6";
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.backgroundColor = "transparent";
@@ -820,7 +841,8 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
                   const alignMenu = document.getElementById("align-menu");
                   const fontMenu = document.getElementById("font-menu");
                   if (alignMenu) {
-                    alignMenu.style.display = alignMenu.style.display === "block" ? "none" : "block";
+                    alignMenu.style.display =
+                      alignMenu.style.display === "block" ? "none" : "block";
                   }
                   // Close font menu if open
                   if (fontMenu) {
@@ -862,7 +884,9 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
                     fontSize: "14px",
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.backgroundColor = isDark ? "#374151" : "#f3f4f6";
+                    e.currentTarget.style.backgroundColor = isDark
+                      ? "#374151"
+                      : "#f3f4f6";
                   }}
                   onMouseLeave={(e) => {
                     e.currentTarget.style.backgroundColor = "transparent";
@@ -885,7 +909,9 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
                     fontSize: "14px",
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.backgroundColor = isDark ? "#374151" : "#f3f4f6";
+                    e.currentTarget.style.backgroundColor = isDark
+                      ? "#374151"
+                      : "#f3f4f6";
                   }}
                   onMouseLeave={(e) => {
                     e.currentTarget.style.backgroundColor = "transparent";
@@ -908,7 +934,9 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
                     fontSize: "14px",
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.backgroundColor = isDark ? "#374151" : "#f3f4f6";
+                    e.currentTarget.style.backgroundColor = isDark
+                      ? "#374151"
+                      : "#f3f4f6";
                   }}
                   onMouseLeave={(e) => {
                     e.currentTarget.style.backgroundColor = "transparent";
@@ -938,7 +966,9 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
                   fontSize: "14px",
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = isDark ? "#374151" : "#f3f4f6";
+                  e.currentTarget.style.backgroundColor = isDark
+                    ? "#374151"
+                    : "#f3f4f6";
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.backgroundColor = "transparent";
@@ -948,7 +978,8 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
                   const fontMenu = document.getElementById("font-menu");
                   const alignMenu = document.getElementById("align-menu");
                   if (fontMenu) {
-                    fontMenu.style.display = fontMenu.style.display === "block" ? "none" : "block";
+                    fontMenu.style.display =
+                      fontMenu.style.display === "block" ? "none" : "block";
                   }
                   // Close align menu if open
                   if (alignMenu) {
@@ -991,7 +1022,9 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
                     fontWeight: "bold",
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.backgroundColor = isDark ? "#374151" : "#f3f4f6";
+                    e.currentTarget.style.backgroundColor = isDark
+                      ? "#374151"
+                      : "#f3f4f6";
                   }}
                   onMouseLeave={(e) => {
                     e.currentTarget.style.backgroundColor = "transparent";
@@ -1015,7 +1048,9 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
                     fontStyle: "italic",
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.backgroundColor = isDark ? "#374151" : "#f3f4f6";
+                    e.currentTarget.style.backgroundColor = isDark
+                      ? "#374151"
+                      : "#f3f4f6";
                   }}
                   onMouseLeave={(e) => {
                     e.currentTarget.style.backgroundColor = "transparent";
@@ -1039,7 +1074,9 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
                     textDecoration: "underline",
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.backgroundColor = isDark ? "#374151" : "#f3f4f6";
+                    e.currentTarget.style.backgroundColor = isDark
+                      ? "#374151"
+                      : "#f3f4f6";
                   }}
                   onMouseLeave={(e) => {
                     e.currentTarget.style.backgroundColor = "transparent";

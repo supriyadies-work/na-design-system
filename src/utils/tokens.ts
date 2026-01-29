@@ -4,7 +4,11 @@
  */
 
 // Import generated tokens from JS (has actual values)
-import * as tokens from "../dist/js/tokens";
+// IMPORTANT: After build, this file will be at dist/js/utils/tokens.js
+// So the import path must be "../tokens" to correctly resolve to dist/js/tokens.js
+// NOTE: This path works AFTER build. During development, tokens file is at dist/js/tokens.js
+// Build process should handle this correctly
+import * as tokens from "../tokens";
 
 export { tokens };
 

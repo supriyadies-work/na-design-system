@@ -1,0 +1,7 @@
+{
+  "scale": {
+    "name": { "value": "nisaaulia" },
+    "multiplier": { "value": "1" },
+    "description": { "value": "Default scale for Nisa Aulia portfolio - maintains existing design system values" }
+  }
+}

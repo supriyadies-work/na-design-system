@@ -73,5 +73,19 @@ if (fs.existsSync(srcPublic)) {
   console.log('⚠️  Public directory not found');
 }
 
+// Copy scale.css from src/styles to dist/css
+const srcScaleCSS = path.join(__dirname, '../src/styles/scale.css');
+const destScaleCSS = path.join(__dirname, '../dist/css/scale.css');
+
+if (fs.existsSync(srcScaleCSS)) {
+  if (!fs.existsSync(path.dirname(destScaleCSS))) {
+    fs.mkdirSync(path.dirname(destScaleCSS), { recursive: true });
+  }
+  fs.copyFileSync(srcScaleCSS, destScaleCSS);
+  console.log(`✅ Copied scale.css: ${srcScaleCSS} -> ${destScaleCSS}`);
+} else {
+  console.log('⚠️  scale.css not found in src/styles');
+}
+
 // No need to generate JS module - file is served directly from public directory
 
