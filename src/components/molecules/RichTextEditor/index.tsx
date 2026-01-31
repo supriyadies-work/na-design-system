@@ -45,8 +45,8 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
 }) => {
   const { theme } = useTheme();
   const [mounted, setMounted] = useState(false);
-  const quillRef = useRef<any>(null);
-  const quillEditorRef = useRef<any>(null);
+  const quillRef = useRef<any>(null); // Container div ref
+  const quillEditorRef = useRef<any>(null); // Quill editor instance
   const blogSlugRef = useRef<string | undefined>(blogSlug);
   const [pendingImages, setPendingImages] = useState<PendingImage[]>([]);
   const [showTooltip, setShowTooltip] = useState(false);
@@ -76,41 +76,37 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     if (!mounted) return;
 
     const setupEditor = () => {
-      if (!quillRef.current) return;
+      if (!quillRef.current) return false;
 
       const container = quillRef.current;
-
-      // Find the .ql-editor element
       const editorElement = container.querySelector(
         ".ql-editor",
       ) as HTMLElement;
+
       if (editorElement) {
-        // Try multiple ways to get Quill instance
         let quillInstance: any = null;
 
-        // Method 1: From element's __quill property
-        if ((editorElement as any).__quill) {
+        // Method 1: From ql-container's __quill property (most reliable for react-quill-new)
+        const qlContainer = container.querySelector(".ql-container");
+        if (qlContainer && (qlContainer as any).__quill) {
+          quillInstance = (qlContainer as any).__quill;
+        }
+        // Method 2: From element's __quill property
+        else if ((editorElement as any).__quill) {
           quillInstance = (editorElement as any).__quill;
         }
-        // Method 2: Using Quill.find (if available)
+        // Method 3: Using Quill.find (if available)
         else if ((window as any).Quill) {
           quillInstance = (window as any).Quill.find(editorElement);
-        }
-        // Method 3: From parent container
-        else {
-          const qlContainer = container.querySelector(".ql-container");
-          if (qlContainer && (qlContainer as any).__quill) {
-            quillInstance = (qlContainer as any).__quill;
-          }
         }
 
         if (quillInstance && quillInstance.root) {
           quillEditorRef.current = quillInstance;
           setQuillReady(true);
-          return true; // Success
+          return true;
         }
       }
-      return false; // Not ready yet
+      return false;
     };
 
     // Try immediately
@@ -118,7 +114,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
 
     // Retry with increasing delays
     const timeouts: NodeJS.Timeout[] = [];
-    [100, 200, 500, 1000, 1500, 2000].forEach((delay) => {
+    [100, 200, 500, 1000, 1500, 2000, 3000].forEach((delay) => {
       const timeoutId = setTimeout(() => {
         if (setupEditor()) {
           timeouts.forEach(clearTimeout);
@@ -416,18 +412,10 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
             // First try cached instance
             let quill: any = quillEditorRef.current;
 
-            // If not cached, try to find Quill instance from DOM
+            // Fallback: try to find Quill instance from DOM
             if (!quill) {
-              // Method 1: From element's __quill property
-              quill = (editorElement as any).__quill;
-
-              // Method 2: Using Quill.find (if available)
-              if (!quill && (window as any).Quill) {
-                quill = (window as any).Quill.find(editorElement);
-              }
-
-              // Method 3: From parent container
-              if (!quill && quillRef.current) {
+              // Method 1: From ql-container's __quill property (most reliable)
+              if (quillRef.current) {
                 const qlContainer =
                   quillRef.current.querySelector(".ql-container");
                 if (qlContainer && (qlContainer as any).__quill) {
@@ -435,10 +423,20 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
                 }
               }
 
-              // Cache if found
-              if (quill) {
-                quillEditorRef.current = quill;
+              // Method 2: From element's __quill property
+              if (!quill) {
+                quill = (editorElement as any).__quill;
               }
+
+              // Method 3: Using Quill.find (if available)
+              if (!quill && (window as any).Quill) {
+                quill = (window as any).Quill.find(editorElement);
+              }
+            }
+
+            // Cache if found
+            if (quill && !quillEditorRef.current) {
+              quillEditorRef.current = quill;
             }
 
             // Try Quill API first (best method)
