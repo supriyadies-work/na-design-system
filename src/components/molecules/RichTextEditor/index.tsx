@@ -621,7 +621,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     [imageHandler], // Only depends on imageHandler, which is stable
   );
 
-  // Quill formats
+  // Quill formats - "bullet" is a VALUE of "list" format, not a separate format
   const formats = [
     "header",
     "font",
@@ -631,8 +631,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     "underline",
     "strike",
     "blockquote",
-    "list",
-    "bullet",
+    "list", // supports values: "ordered" | "bullet"
     "indent",
     "script",
     "color",
