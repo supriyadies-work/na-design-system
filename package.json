@@ -1,11 +1,12 @@
 {
   "name": "@supriyadies-work/na-design-system",
-  "version": "1.1.29",
+  "version": "1.1.31",
   "description": "Design System package for Nisa Aulia Portfolio",
   "repository": {
     "type": "git",
     "url": "https://github.com/supriyadies-work/na-design-system.git"
   },
+  "homepage": "https://nisaaulia.com/design-pattern",
   "publishConfig": {
     "access": "public",
     "registry": "https://registry.npmjs.org/"
@@ -56,7 +57,7 @@
   },
   "dependencies": {
     "clsx": "^2.1.1",
-    "react-quill": "^2.0.0",
+    "react-quill-new": "^3.7.0",
     "tailwind-merge": "^3.4.0"
   },
   "devDependencies": {

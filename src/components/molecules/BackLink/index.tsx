@@ -25,14 +25,13 @@ export const BackLink: React.FC<BackLinkProps> = ({
   iconClassName,
   testId,
 }) => {
-  return (
+  const link = (
     <Link
       href={href}
       className={cn(
         "inline-flex items-center gap-2 text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white mb-8 transition-colors",
         className,
       )}
-      testId={testId}
     >
       <Icon
         name="arrowLeft"
@@ -49,6 +48,10 @@ export const BackLink: React.FC<BackLinkProps> = ({
       </Text>
     </Link>
   );
+  if (testId) {
+    return <span data-testid={testId}>{link}</span>;
+  }
+  return link;
 };
 
 export default BackLink;

@@ -10,11 +10,10 @@ import React, {
 import dynamic from "next/dynamic";
 import { useTheme } from "next-themes";
 import type { PendingImage } from "@/lib/helpers/pendingImageUpload";
-import "react-quill/dist/quill.snow.css";
+import "react-quill-new/dist/quill.snow.css";
 
-// Dynamic import untuk avoid SSR issues
-// Wrap with forwardRef to support ref forwarding
-const ReactQuill = dynamic(() => import("react-quill"), {
+// Dynamic import untuk avoid SSR issues (react-quill-new is React 18/19 compatible, no findDOMNode)
+const ReactQuill = dynamic(() => import("react-quill-new"), {
   ssr: false,
   loading: () => (
     <div className="min-h-[300px] border border-neutral-300 dark:border-neutral-600 rounded-lg p-4 bg-white dark:bg-neutral-800">
