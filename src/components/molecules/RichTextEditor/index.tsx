@@ -12,17 +12,27 @@ import { useTheme } from "next-themes";
 import type { PendingImage } from "@/lib/helpers/pendingImageUpload";
 import "react-quill-new/dist/quill.snow.css";
 
-// Dynamic import untuk avoid SSR issues (react-quill-new is React 18/19 compatible, no findDOMNode)
-const ReactQuill = dynamic(() => import("react-quill-new"), {
-  ssr: false,
-  loading: () => (
-    <div className="min-h-[300px] border border-neutral-300 dark:border-neutral-600 rounded-lg p-4 bg-white dark:bg-neutral-800">
-      <p className="text-neutral-500 dark:text-neutral-400">
-        Loading editor...
-      </p>
-    </div>
-  ),
-});
+// Store Quill from react-quill-new when it loads (Quill 2 doesn't use __quill on DOM)
+let QuillClass: { find: (el: HTMLElement) => any } | null = null;
+
+// Dynamic import untuk avoid SSR issues
+const ReactQuill = dynamic(
+  async () => {
+    const mod = await import("react-quill-new");
+    QuillClass = mod.Quill;
+    return mod.default;
+  },
+  {
+    ssr: false,
+    loading: () => (
+      <div className="min-h-[300px] border border-neutral-300 dark:border-neutral-600 rounded-lg p-4 bg-white dark:bg-neutral-800">
+        <p className="text-neutral-500 dark:text-neutral-400">
+          Loading editor...
+        </p>
+      </div>
+    ),
+  }
+);
 
 interface RichTextEditorProps {
   value: string;
@@ -54,6 +64,47 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
   const [quillReady, setQuillReady] = useState(false);
   const tooltipRef = useRef<HTMLDivElement>(null);
 
+  // Helper to capture Quill instance from DOM (Quill 2 uses Quill.find(), not __quill)
+  const captureQuillInstance = useCallback(() => {
+    if (quillEditorRef.current) return true;
+    if (!quillRef.current || !QuillClass) return false;
+
+    const container = quillRef.current;
+    const qlContainer = container.querySelector(".ql-container");
+    if (!qlContainer) return false;
+
+    try {
+      const quillInstance = QuillClass.find(qlContainer);
+      if (quillInstance && quillInstance.root) {
+        quillEditorRef.current = quillInstance;
+        setQuillReady(true);
+        return true;
+      }
+    } catch {
+      // Quill.find may throw if not ready
+    }
+    return false;
+  }, []);
+
+  // Try to capture Quill instance when onChange fires
+  const handleEditorChange = useCallback(
+    (content: string) => {
+      onChange(content);
+      captureQuillInstance();
+    },
+    [onChange, captureQuillInstance]
+  );
+
+  // Callback for selection change to trigger Quill instance capture
+  const handleChangeSelection = useCallback(() => {
+    captureQuillInstance();
+  }, [captureQuillInstance]);
+
+  // Callback for focus to trigger Quill instance capture
+  const handleFocus = useCallback(() => {
+    captureQuillInstance();
+  }, [captureQuillInstance]);
+
   // Update blogSlug ref when it changes
   useEffect(() => {
     blogSlugRef.current = blogSlug;
@@ -71,79 +122,42 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     setMounted(true);
   }, []);
 
-  // Setup Quill editor instance after mount
+  // Setup Quill editor instance - poll until we capture (Quill loads async)
   useEffect(() => {
-    if (!mounted) return;
+    if (!mounted || (quillReady && quillEditorRef.current)) return;
 
-    const setupEditor = () => {
-      if (!quillRef.current) return false;
+    const setupEditor = (): boolean => {
+      if (quillEditorRef.current) {
+        if (!quillReady) setQuillReady(true);
+        return true;
+      }
+      if (!quillRef.current || !QuillClass) return false;
 
       const container = quillRef.current;
-      const editorElement = container.querySelector(
-        ".ql-editor",
-      ) as HTMLElement;
+      const qlContainer = container.querySelector(".ql-container");
+      if (!qlContainer) return false;
 
-      if (editorElement) {
-        let quillInstance: any = null;
-
-        // Method 1: From ql-container's __quill property (most reliable for react-quill-new)
-        const qlContainer = container.querySelector(".ql-container");
-        if (qlContainer && (qlContainer as any).__quill) {
-          quillInstance = (qlContainer as any).__quill;
-        }
-        // Method 2: From element's __quill property
-        else if ((editorElement as any).__quill) {
-          quillInstance = (editorElement as any).__quill;
-        }
-        // Method 3: Using Quill.find (if available)
-        else if ((window as any).Quill) {
-          quillInstance = (window as any).Quill.find(editorElement);
-        }
-
+      try {
+        const quillInstance = QuillClass.find(qlContainer);
         if (quillInstance && quillInstance.root) {
           quillEditorRef.current = quillInstance;
           setQuillReady(true);
           return true;
         }
+      } catch {
+        // Quill.find may throw if not ready
       }
       return false;
     };
 
-    // Try immediately
-    if (setupEditor()) return;
+    let attempts = 0;
+    const maxAttempts = 54;
+    const poll = setInterval(() => {
+      if (setupEditor() || ++attempts >= maxAttempts) clearInterval(poll);
+    }, 150);
 
-    // Retry with increasing delays
-    const timeouts: NodeJS.Timeout[] = [];
-    [100, 200, 500, 1000, 1500, 2000, 3000].forEach((delay) => {
-      const timeoutId = setTimeout(() => {
-        if (setupEditor()) {
-          timeouts.forEach(clearTimeout);
-        }
-      }, delay);
-      timeouts.push(timeoutId);
-    });
-
-    // Use MutationObserver to detect when editor is added
-    const observer = new MutationObserver(() => {
-      if (setupEditor()) {
-        observer.disconnect();
-        timeouts.forEach(clearTimeout);
-      }
-    });
-
-    if (quillRef.current) {
-      observer.observe(quillRef.current, {
-        childList: true,
-        subtree: true,
-      });
-    }
-
-    return () => {
-      timeouts.forEach(clearTimeout);
-      observer.disconnect();
-      setQuillReady(false);
-    };
-  }, [mounted]);
+    return () => clearInterval(poll);
+  }, [mounted, quillReady]);
 
   // Handle text selection and show tooltip (runs when Quill is ready)
   useEffect(() => {
@@ -159,7 +173,6 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
       const bounds = quill.getBounds(range.index, range.length);
       if (!bounds) return;
 
-      // Fixed positioning = viewport coords. Use getBoundingClientRect (no scroll offset).
       const editorRect = editorElement.getBoundingClientRect();
       const tooltipTop = editorRect.top + bounds.top - 48;
       const tooltipLeft = editorRect.left + bounds.left + bounds.width / 2;
@@ -412,31 +425,23 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
             // First try cached instance
             let quill: any = quillEditorRef.current;
 
-            // Fallback: try to find Quill instance from DOM
-            if (!quill) {
-              // Method 1: From ql-container's __quill property (most reliable)
-              if (quillRef.current) {
-                const qlContainer =
-                  quillRef.current.querySelector(".ql-container");
-                if (qlContainer && (qlContainer as any).__quill) {
-                  quill = (qlContainer as any).__quill;
+            // Fallback: try to find Quill instance from DOM (Quill 2: pass .ql-container to find)
+            if (!quill && QuillClass && quillRef.current) {
+              const container = quillRef.current;
+              const qlContainer = container.querySelector(".ql-container");
+              if (qlContainer) {
+                try {
+                  quill = QuillClass.find(qlContainer);
+                } catch (e) {
+                  // Quill.find may throw
                 }
-              }
-
-              // Method 2: From element's __quill property
-              if (!quill) {
-                quill = (editorElement as any).__quill;
-              }
-
-              // Method 3: Using Quill.find (if available)
-              if (!quill && (window as any).Quill) {
-                quill = (window as any).Quill.find(editorElement);
               }
             }
 
             // Cache if found
             if (quill && !quillEditorRef.current) {
               quillEditorRef.current = quill;
+              setQuillReady(true);
             }
 
             // Try Quill API first (best method)
@@ -749,7 +754,9 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
           <ReactQuill
             theme="snow"
             value={value}
-            onChange={onChange}
+            onChange={handleEditorChange}
+            onChangeSelection={handleChangeSelection}
+            onFocus={handleFocus}
             modules={modules}
             formats={formats}
             placeholder={placeholder}
