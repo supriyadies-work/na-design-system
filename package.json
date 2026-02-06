@@ -1,6 +1,6 @@
 {
   "name": "@supriyadies-work/na-design-system",
-  "version": "1.1.35",
+  "version": "1.2.0",
   "description": "Design System package for Nisa Aulia Portfolio",
   "repository": {
     "type": "git",
@@ -28,7 +28,8 @@
     "./js/tokens": "./dist/js/tokens.js",
     "./utils": "./dist/js/utils/index.js",
     "./assets/*": "./dist/js/assets/*/index.js",
-    "./public/*": "./public/*"
+    "./public/*": "./public/*",
+    "./docs": "./dist/docs-metadata.json"
   },
   "files": [
     "dist",
@@ -36,7 +37,8 @@
     "README.md"
   ],
   "scripts": {
-    "build": "npm run build:tokens && npm run build:compile && npm run build:resolve-aliases && npm run build:copy-assets",
+    "build": "npm run build:tokens && npm run build:compile && npm run build:resolve-aliases && npm run build:copy-assets && npm run build:docs",
+    "build:docs": "node scripts/generate-docs-metadata.js",
     "build:tokens": "style-dictionary build --config src/config/style-dictionary.config.js",
     "build:compile": "tsc || true",
     "build:resolve-aliases": "tsc-alias",

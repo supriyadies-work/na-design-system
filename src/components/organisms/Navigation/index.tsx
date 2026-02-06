@@ -17,10 +17,11 @@ interface NavigationProps {
 }
 
 export const Navigation: React.FC<NavigationProps> = ({
-  items,
+  items = [],
   orientation = "horizontal",
   className,
 }) => {
+  const list = Array.isArray(items) ? items : [];
   return (
     <nav
       className={cn(
@@ -32,7 +33,7 @@ export const Navigation: React.FC<NavigationProps> = ({
       role="navigation"
       aria-label="Main navigation"
     >
-      {items.map((item, index) => {
+      {list.map((item, index) => {
         const isActive = item.active;
         const content = (
           <span

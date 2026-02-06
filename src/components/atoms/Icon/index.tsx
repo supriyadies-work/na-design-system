@@ -2,6 +2,10 @@ import React from "react";
 import { cn } from "@na-design-system/utils/cn";
 import { iconPaths, type IconName } from "./icons";
 
+export type { IconName };
+/** Daftar semua nama icon yang tersedia (untuk docs / icon directory) */
+export const ICON_NAMES: IconName[] = Object.keys(iconPaths) as IconName[];
+
 interface IconProps {
   name?: IconName;
   children?: React.ReactNode;
@@ -44,7 +48,7 @@ export const Icon: React.FC<IconProps> = ({
       className={cn(
         "inline-flex items-center justify-center",
         sizeStyles[size],
-        className,
+        className
       )}
       role="img"
       aria-hidden="true"

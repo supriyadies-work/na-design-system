@@ -25,6 +25,7 @@ export const Checkbox: React.FC<CheckboxProps> = ({
   const generatedId = useId();
   const checkboxId = id || generatedId;
   const hasError = !!error;
+  const { children: _unused, ...inputProps } = props;
 
   return (
     <div className="w-full">
@@ -41,13 +42,13 @@ export const Checkbox: React.FC<CheckboxProps> = ({
             hasError
               ? "border-error-500 dark:border-error-500"
               : "border-neutral-300 dark:border-neutral-600",
-            className,
+            className
           )}
           aria-invalid={hasError}
           aria-describedby={hasError ? `${checkboxId}-error` : undefined}
           required={required}
           data-testid={testId}
-          {...props}
+          {...inputProps}
         />
         {label && (
           <label
@@ -56,7 +57,7 @@ export const Checkbox: React.FC<CheckboxProps> = ({
               "ml-2 text-sm font-medium",
               hasError
                 ? "text-error-600 dark:text-error-400"
-                : "text-neutral-700 dark:text-neutral-300",
+                : "text-neutral-700 dark:text-neutral-300"
             )}
             data-testid={testId ? `${testId}.label` : undefined}
           >

@@ -44,7 +44,9 @@ export const Image: React.FC<ImageProps> = ({
   // For external images, use conditional optimization:
   // - Desktop: unoptimized (faster, desktop has bandwidth)
   // - Mobile: optimized (smaller file size, mobile needs compression)
-  const isExternal = src.startsWith("http://") || src.startsWith("https://");
+  const srcStr = typeof src === "string" ? src : "";
+  const isExternal =
+    srcStr.startsWith("http://") || srcStr.startsWith("https://");
 
   // Always optimize if explicitly requested, or if it's not external
   let shouldOptimize = !unoptimized && !isExternal;
@@ -56,11 +58,25 @@ export const Image: React.FC<ImageProps> = ({
     shouldOptimize = isMobile; // Optimize on mobile, unoptimized on desktop
   }
 
+  if (!srcStr) {
+    return (
+      <div
+        className={cn(
+          "flex items-center justify-center bg-neutral-200 dark:bg-neutral-700 text-neutral-500 dark:text-neutral-400 text-sm min-h-[120px]",
+          className
+        )}
+        data-testid={testId}
+      >
+        No image
+      </div>
+    );
+  }
+
   if (fill) {
     return (
       <NextImage
-        src={src}
-        alt={alt}
+        src={srcStr}
+        alt={alt ?? ""}
         fill
         className={cn("object-cover", className)}
         priority={priority}
@@ -79,8 +95,8 @@ export const Image: React.FC<ImageProps> = ({
 
   return (
     <NextImage
-      src={src}
-      alt={alt}
+      src={srcStr}
+      alt={alt ?? ""}
       width={width || 400}
       height={height || 300}
       className={cn("object-cover", className)}

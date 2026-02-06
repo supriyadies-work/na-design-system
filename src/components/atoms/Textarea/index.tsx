@@ -24,6 +24,7 @@ export const Textarea: React.FC<TextareaProps> = ({
   const generatedId = useId();
   const textareaId = id || generatedId;
   const hasError = !!error;
+  const { children: _unused, ...textareaProps } = props;
 
   return (
     <div className="w-full">
@@ -54,7 +55,7 @@ export const Textarea: React.FC<TextareaProps> = ({
           hasError
             ? "border-error-500 dark:border-error-500"
             : "border-neutral-300 dark:border-neutral-600",
-          className,
+          className
         )}
         aria-invalid={hasError}
         aria-describedby={
@@ -66,7 +67,7 @@ export const Textarea: React.FC<TextareaProps> = ({
         }
         required={required}
         data-testid={testId}
-        {...props}
+        {...textareaProps}
       />
       {error && (
         <p

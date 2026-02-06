@@ -33,7 +33,7 @@ export const GlassRadioGroup: React.FC<GlassRadioGroupProps> = ({
     if (!gliderRef.current || !containerRef.current) return;
 
     const selectedIndex = options.findIndex(
-      (opt) => opt.value === selectedValue,
+      (opt) => opt.value === selectedValue
     );
     if (selectedIndex === -1) return;
 
@@ -63,7 +63,7 @@ export const GlassRadioGroup: React.FC<GlassRadioGroupProps> = ({
     >
       <div className="glass-glider" ref={gliderRef} />
       {options.map((option, index) => (
-        <React.Fragment key={option.id}>
+        <React.Fragment key={option.id ? String(option.id) : `option-${index}`}>
           <input
             type="radio"
             id={option.id}

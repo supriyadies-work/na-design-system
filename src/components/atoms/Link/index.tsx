@@ -37,13 +37,14 @@ export const Link: React.FC<LinkProps> = ({
   const classes = cn(
     "transition-colors underline underline-offset-1",
     variantStyles[variant],
-    className,
+    className
   );
 
-  if (external || href.startsWith("http")) {
+  const hrefStr = typeof href === "string" ? href : "#";
+  if (external || hrefStr.startsWith("http")) {
     return (
       <a
-        href={href}
+        href={hrefStr}
         className={classes}
         target="_blank"
         rel="noopener noreferrer"
@@ -62,7 +63,7 @@ export const Link: React.FC<LinkProps> = ({
 
   return (
     <NextLink
-      href={href}
+      href={hrefStr}
       className={classes}
       onClick={onClick}
       onMouseEnter={onMouseEnter}

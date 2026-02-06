@@ -25,6 +25,7 @@ export const Switch: React.FC<SwitchProps> = ({
   const generatedId = useId();
   const switchId = id || generatedId;
   const hasError = !!error;
+  const { children: _unused, ...inputProps } = props;
 
   return (
     <div className="w-full">
@@ -41,16 +42,16 @@ export const Switch: React.FC<SwitchProps> = ({
             aria-describedby={hasError ? `${switchId}-error` : undefined}
             required={required}
             data-testid={testId}
-            {...props}
+            {...inputProps}
           />
           <div
             className={cn(
               "w-11 h-6 bg-neutral-300 dark:bg-neutral-600 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-neutral-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-600",
               hasError && "ring-2 ring-error-500",
-              className,
+              className
             )}
             role="switch"
-            aria-checked={props.checked}
+            aria-checked={inputProps.checked}
           />
         </label>
         {label && (
@@ -60,7 +61,7 @@ export const Switch: React.FC<SwitchProps> = ({
               "ml-3 text-sm font-medium",
               hasError
                 ? "text-error-600 dark:text-error-400"
-                : "text-neutral-700 dark:text-neutral-300",
+                : "text-neutral-700 dark:text-neutral-300"
             )}
             data-testid={testId ? `${testId}.label` : undefined}
           >
