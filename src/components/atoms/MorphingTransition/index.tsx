@@ -3,9 +3,9 @@
 import React from "react";
 
 interface MorphingTransitionProps {
-  wrapRef?: React.RefObject<HTMLDivElement>;
-  svgRef?: React.RefObject<SVGSVGElement>;
-  pathRef?: React.RefObject<SVGPathElement>;
+  wrapRef?: React.RefObject<HTMLDivElement | null>;
+  svgRef?: React.RefObject<SVGSVGElement | null>;
+  pathRef?: React.RefObject<SVGPathElement | null>;
   gradientId?: string;
   gradientColors?: {
     start: string;
