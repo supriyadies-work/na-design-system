@@ -1,3 +1,5 @@
+"use client";
+
 import React from "react";
 import { Input, Textarea, Text } from "@na-design-system/components/atoms";
 import {
