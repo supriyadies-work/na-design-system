@@ -10,6 +10,7 @@ export { InputGroup } from "./InputGroup";
 export { ButtonGroup } from "./ButtonGroup";
 export { Modal } from "./Modal";
 export { Dialog } from "./Dialog";
+export { Toast } from "./Toast";
 export { Alert } from "./Alert";
 export { Tabs } from "./Tabs";
 export { TabContent } from "./TabContent";

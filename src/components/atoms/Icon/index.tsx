@@ -39,7 +39,9 @@ export const Icon: React.FC<IconProps> = ({
   }
 
   // Determine if icon uses fill or stroke based on name
-  const isFillIcon = name && ["instagram", "whatsapp"].includes(name);
+  const isFillIcon =
+    name &&
+    ["instagram", "whatsapp", "facebook", "twitter", "linkedin"].includes(name);
   const useFill = fill || isFillIcon;
   const useStroke = stroke && !isFillIcon;
 
