@@ -1,10 +1,10 @@
 {
   "name": "@supriyadies-work/na-design-system",
-  "version": "1.2.0",
+  "version": "1.2.5",
   "description": "Design System package for Nisa Aulia Portfolio",
   "repository": {
     "type": "git",
-    "url": "https://github.com/supriyadies-work/na-design-system.git"
+    "url": "git+https://github.com/supriyadies-work/na-design-system.git"
   },
   "homepage": "https://nisaaulia.com/design-pattern",
   "publishConfig": {
