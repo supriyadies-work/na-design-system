@@ -63,6 +63,8 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
   const [tooltipPosition, setTooltipPosition] = useState({ top: 0, left: 0 });
   const [quillReady, setQuillReady] = useState(false);
   const tooltipRef = useRef<HTMLDivElement>(null);
+  const isScrollingRef = useRef(false);
+  const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Helper to capture Quill instance from DOM (Quill 2 uses Quill.find(), not __quill)
   const captureQuillInstance = useCallback(() => {
@@ -209,20 +211,56 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     editorElement.addEventListener("mouseup", onMouseUp);
     editorElement.addEventListener("keyup", onMouseUp);
 
+    // Throttled scroll handler to prevent jitter
+    let scrollFrameId: number | null = null;
     const onScroll = () => {
-      const sel = quill.getSelection(true);
-      if (sel && sel.length > 0) updateTooltipPosition(sel);
+      // Don't update tooltip position during manual scroll to prevent conflicts
+      if (isScrollingRef.current) return;
+
+      // Use requestAnimationFrame for smooth updates
+      if (scrollFrameId === null) {
+        scrollFrameId = requestAnimationFrame(() => {
+          const sel = quill.getSelection(true);
+          if (sel && sel.length > 0) {
+            updateTooltipPosition(sel);
+          }
+          scrollFrameId = null;
+        });
+      }
     };
 
-    window.addEventListener("scroll", onScroll, true);
+    // Only listen to editor scroll, not window scroll (prevents double events)
     editorElement.addEventListener("scroll", onScroll);
+
+    // Detect manual scroll to prevent tooltip updates during scroll
+    const handleScrollStart = () => {
+      isScrollingRef.current = true;
+
+      // Clear existing timeout
+      if (scrollTimeoutRef.current) {
+        clearTimeout(scrollTimeoutRef.current);
+      }
+
+      // Re-enable tooltip updates after scrolling stops (150ms debounce)
+      scrollTimeoutRef.current = setTimeout(() => {
+        isScrollingRef.current = false;
+      }, 150);
+    };
+
+    editorElement.addEventListener("scroll", handleScrollStart);
 
     return () => {
       quill.off("selection-change", handleSelectionChange);
       editorElement.removeEventListener("mouseup", onMouseUp);
       editorElement.removeEventListener("keyup", onMouseUp);
-      window.removeEventListener("scroll", onScroll, true);
       editorElement.removeEventListener("scroll", onScroll);
+      editorElement.removeEventListener("scroll", handleScrollStart);
+      if (scrollFrameId !== null) {
+        cancelAnimationFrame(scrollFrameId);
+      }
+      if (scrollTimeoutRef.current) {
+        clearTimeout(scrollTimeoutRef.current);
+      }
     };
   }, [mounted, quillReady]);
 
