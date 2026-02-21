@@ -41,22 +41,11 @@ export const Image: React.FC<ImageProps> = ({
   suppressHydrationWarning,
   testId,
 }) => {
-  // For external images, use conditional optimization:
-  // - Desktop: unoptimized (faster, desktop has bandwidth)
-  // - Mobile: optimized (smaller file size, mobile needs compression)
+  // SSR-safe: no window or client-only logic so server and client output match.
   const srcStr = typeof src === "string" ? src : "";
   const isExternal =
     srcStr.startsWith("http://") || srcStr.startsWith("https://");
-
-  // Always optimize if explicitly requested, or if it's not external
-  let shouldOptimize = !unoptimized && !isExternal;
-
-  // For external images, optimize on mobile to reduce file size
-  if (isExternal && typeof window !== "undefined") {
-    // Check if mobile (width < 1024px) - optimize for mobile
-    const isMobile = window.innerWidth < 1024;
-    shouldOptimize = isMobile; // Optimize on mobile, unoptimized on desktop
-  }
+  const shouldOptimize = !unoptimized && !isExternal;
 
   if (!srcStr) {
     return (
@@ -73,14 +62,19 @@ export const Image: React.FC<ImageProps> = ({
   }
 
   if (fill) {
+    const fillSizes =
+      sizes ?? "(max-width: 640px) 100vw, (max-width: 1024px) 90vw, 1200px";
+    const forceContain =
+      typeof className === "string" && className.includes("object-contain");
     return (
       <NextImage
         src={srcStr}
         alt={alt ?? ""}
         fill
-        className={cn("object-cover", className)}
+        className={className}
+        style={forceContain ? { objectFit: "contain" } : undefined}
         priority={priority}
-        sizes={sizes}
+        sizes={fillSizes}
         unoptimized={!shouldOptimize}
         quality={quality}
         loading={loading}
@@ -93,6 +87,7 @@ export const Image: React.FC<ImageProps> = ({
     );
   }
 
+  const nonFillSizes = sizes ?? "100vw";
   return (
     <NextImage
       src={srcStr}
@@ -101,7 +96,7 @@ export const Image: React.FC<ImageProps> = ({
       height={height || 300}
       className={cn("object-cover", className)}
       priority={priority}
-      sizes={sizes}
+      sizes={nonFillSizes}
       unoptimized={!shouldOptimize}
       quality={quality}
       loading={loading}
