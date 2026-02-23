@@ -214,6 +214,26 @@ export const iconPaths = {
       />
     </>
   ),
+  chevronDown: (
+    <>
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M19 9l-7 7-7-7"
+      />
+    </>
+  ),
+  collapsible: (
+    <>
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M4 6h16M4 12h10m0 0v0m0-6v0M19 14l-7 7-7-7"
+      />
+    </>
+  ),
   listBullet: (
     <>
       <path

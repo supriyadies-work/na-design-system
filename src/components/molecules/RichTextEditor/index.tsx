@@ -20,7 +20,7 @@ let QuillClass: { find: (el: HTMLElement) => any } | null = null;
 const SLASH_COMMANDS: { key: string; label: string; icon: IconName }[] = [
   { key: "image", label: "Insert Image", icon: "image" },
   { key: "link", label: "Create Link", icon: "link" },
-  { key: "bullet", label: "Toggle List", icon: "listBullet" },
+  { key: "collapsible", label: "Collapsible", icon: "collapsible" },
   { key: "number", label: "Numbered List", icon: "listNumber" },
   { key: "pullquote", label: "Pull Quote", icon: "formatQuote" },
   { key: "blockquote", label: "Block Quote", icon: "formatQuote" },
@@ -30,7 +30,29 @@ const SLASH_COMMANDS: { key: string; label: string; icon: IconName }[] = [
 const ReactQuill = dynamic(
   async () => {
     const mod = await import("react-quill-new");
-    QuillClass = mod.Quill;
+    const Quill = mod.Quill as typeof import("quill").default;
+    QuillClass = Quill;
+
+    const Block = Quill.import("blots/block") as any;
+
+    // -------------------------------------------------------------------------
+    // COLLAPSIBLE: linear only. Satu Block (header) + body = paragraph biasa.
+    // Tidak ada Container. Toggle via CSS sibling (.ql-collapsible-header + *).
+    // -------------------------------------------------------------------------
+
+    class DetailsSummary extends Block {
+      static blotName = "details-summary";
+      static tagName = "DIV";
+
+      static create(value?: unknown) {
+        const node = super.create(value) as HTMLElement;
+        node.classList.add("ql-collapsible-header");
+        return node;
+      }
+    }
+
+    Quill.register(DetailsSummary);
+
     return mod.default;
   },
   {
@@ -314,6 +336,27 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
 
     editorElement.addEventListener("keydown", onSlashKeyDown, true);
     return () => editorElement.removeEventListener("keydown", onSlashKeyDown, true);
+  }, [mounted, quillReady]);
+
+  // Collapsible: toggle .is-open pada header dan next sibling (body)
+  useEffect(() => {
+    if (!mounted || !quillReady || !quillEditorRef.current) return;
+
+    const editor = quillEditorRef.current.root as HTMLElement;
+
+    const onClick = (e: MouseEvent) => {
+      const header = (e.target as HTMLElement)?.closest(".ql-collapsible-header");
+      if (!header) return;
+
+      const body = header.nextElementSibling as HTMLElement | null;
+      if (!body) return;
+
+      header.classList.toggle("is-open");
+      body.classList.toggle("is-open");
+    };
+
+    editor.addEventListener("click", onClick);
+    return () => editor.removeEventListener("click", onClick);
   }, [mounted, quillReady]);
 
   // Slash command: update query when user types after "/" (only while menu is open)
@@ -777,9 +820,15 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
           }
           break;
         }
-        case "bullet":
-          quill.format("list", "bullet");
+        case "collapsible": {
+          const index = lineStartIndex;
+
+          quill.insertText(index, "Header\n", { "details-summary": true });
+          quill.insertText(index + 8, "Content\n");
+
+          quill.setSelection(index);
           break;
+        }
         case "number":
           quill.format("list", "ordered");
           break;
@@ -846,6 +895,29 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
       },
       keyboard: {
         bindings: {
+          deleteDetailsContainer: {
+            key: "Backspace",
+            collapsed: true,
+            handler(this: { quill: any }, range: { index: number }) {
+              const quill = this.quill;
+              if (!quill) return true;
+
+              const [line] = quill.getLine(range.index);
+              if (!line) return true;
+
+              if (line.statics?.blotName === "details-summary") {
+                const text = (line.domNode?.textContent ?? "").trim();
+
+                if (text.length === 0) {
+                  if (line.next) line.next.remove();
+                  line.remove();
+                  return false;
+                }
+              }
+
+              return true;
+            },
+          },
           slash: {
             key: "/",
             handler(
@@ -893,7 +965,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     "underline",
     "strike",
     "blockquote",
-    "list", // supports values: "ordered" | "bullet"
+    "list",
     "indent",
     "script",
     "color",
@@ -903,6 +975,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     "image",
     "video",
     "code-block",
+    "details-summary",
   ];
 
   const isDark = theme === "dark";
@@ -930,6 +1003,50 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     .rich-text-editor .ql-editor.ql-blank::before {
       color: ${isDark ? "#9ca3af" : "#6b7280"};
       font-style: normal;
+    }
+    .rich-text-editor .ql-editor details {
+      margin: 12px 0;
+    }
+    .rich-text-editor .ql-editor .ql-collapsible-header {
+      margin: 12px 0 0;
+      cursor: pointer;
+      font-weight: 600;
+      padding-left: 1.25rem;
+      position: relative;
+    }
+    .rich-text-editor .ql-editor .ql-collapsible-header::before {
+      content: "";
+      border-left: 5px solid currentColor;
+      border-top: 4px solid transparent;
+      border-bottom: 4px solid transparent;
+      position: absolute;
+      left: 0;
+      top: 0.5em;
+      transition: transform 0.15s ease;
+    }
+    .rich-text-editor .ql-editor .ql-collapsible-header.is-open::before {
+      transform: rotate(90deg);
+    }
+    .rich-text-editor .ql-editor .ql-collapsible-header + * {
+      display: none;
+    }
+    .rich-text-editor .ql-editor .ql-collapsible-header.is-open + * {
+      display: block;
+      border-top: 1px solid ${isDark ? "#374151" : "#e5e7eb"};
+      padding-top: 8px;
+    }
+    .rich-text-editor .ql-editor details summary {
+      list-style: none;
+      cursor: pointer;
+      font-weight: 600;
+      pointer-events: auto;
+    }
+    .rich-text-editor .ql-editor details .ql-details-content {
+      border-top: 1px solid ${isDark ? "#374151" : "#e5e7eb"};
+      padding-top: 8px;
+    }
+    .rich-text-editor .ql-editor details[open] summary {
+      margin-bottom: 8px;
     }
     ${
       isDark
