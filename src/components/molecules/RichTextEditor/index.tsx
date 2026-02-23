@@ -10,10 +10,21 @@ import React, {
 import dynamic from "next/dynamic";
 import { useTheme } from "next-themes";
 import type { PendingImage } from "@/lib/helpers/pendingImageUpload";
+import type { IconName } from "@/components/atoms/Icon";
+import { Icon } from "@/components/atoms/Icon";
 import "react-quill-new/dist/quill.snow.css";
 
 // Store Quill from react-quill-new when it loads (Quill 2 doesn't use __quill on DOM)
 let QuillClass: { find: (el: HTMLElement) => any } | null = null;
+
+const SLASH_COMMANDS: { key: string; label: string; icon: IconName }[] = [
+  { key: "image", label: "Insert Image", icon: "image" },
+  { key: "link", label: "Create Link", icon: "link" },
+  { key: "bullet", label: "Toggle List", icon: "listBullet" },
+  { key: "number", label: "Numbered List", icon: "listNumber" },
+  { key: "pullquote", label: "Pull Quote", icon: "formatQuote" },
+  { key: "blockquote", label: "Block Quote", icon: "formatQuote" },
+];
 
 // Dynamic import untuk avoid SSR issues
 const ReactQuill = dynamic(
@@ -63,8 +74,13 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
   const [tooltipPosition, setTooltipPosition] = useState({ top: 0, left: 0 });
   const [quillReady, setQuillReady] = useState(false);
   const tooltipRef = useRef<HTMLDivElement>(null);
+  const slashMenuRef = useRef<HTMLDivElement>(null);
   const isScrollingRef = useRef(false);
   const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const [showSlashMenu, setShowSlashMenu] = useState(false);
+  const [slashQuery, setSlashQuery] = useState("");
+  const [slashPosition, setSlashPosition] = useState({ top: 0, left: 0 });
 
   // Helper to capture Quill instance from DOM (Quill 2 uses Quill.find(), not __quill)
   const captureQuillInstance = useCallback(() => {
@@ -264,6 +280,71 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     };
   }, [mounted, quillReady]);
 
+  // Fallback: open slash menu on "/" at line start via keydown (Quill keyboard binding may not fire)
+  useEffect(() => {
+    if (!mounted || !quillReady || !quillEditorRef.current) return;
+    const quill = quillEditorRef.current;
+    const editorElement = quill.root;
+
+    const onSlashKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== "/" || e.defaultPrevented || e.isComposing) return;
+      const range = quill.getSelection();
+      if (range == null || !quill.hasFocus()) return;
+      try {
+        const [line, offset] = quill.getLine(range.index);
+        if (!line || offset !== 0) return;
+        e.preventDefault();
+        quill.insertText(range.index, "/", "user");
+        quill.setSelection(range.index + 1);
+        requestAnimationFrame(() => {
+          const bounds = quill.getBounds(range.index);
+          if (!bounds) return;
+          const editorRect = editorElement.getBoundingClientRect();
+          setSlashQuery("");
+          setShowSlashMenu(true);
+          setSlashPosition({
+            top: editorRect.top + bounds.top + bounds.height,
+            left: editorRect.left + bounds.left,
+          });
+        });
+      } catch {
+        // ignore
+      }
+    };
+
+    editorElement.addEventListener("keydown", onSlashKeyDown, true);
+    return () => editorElement.removeEventListener("keydown", onSlashKeyDown, true);
+  }, [mounted, quillReady]);
+
+  // Slash command: update query when user types after "/" (only while menu is open)
+  useEffect(() => {
+    if (!showSlashMenu || !quillEditorRef.current) return;
+
+    const quill = quillEditorRef.current;
+
+    const updateQuery = () => {
+      const range = quill.getSelection(true);
+      if (!range) return;
+
+      try {
+        const [line, _offset] = quill.getLine(range.index);
+        if (!line?.domNode) return;
+
+        const text = (line.domNode as HTMLElement).textContent ?? "";
+        if (!text.startsWith("/")) {
+          setShowSlashMenu(false);
+          return;
+        }
+        setSlashQuery(text.slice(1));
+      } catch {
+        setShowSlashMenu(false);
+      }
+    };
+
+    quill.on("text-change", updateQuery);
+    return () => quill.off("text-change", updateQuery);
+  }, [showSlashMenu]);
+
   // Hide tooltip when clicking outside
   useEffect(() => {
     if (!showTooltip) return;
@@ -301,6 +382,33 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [showTooltip]);
+
+  // Close slash menu on Escape or click outside
+  useEffect(() => {
+    if (!showSlashMenu) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setShowSlashMenu(false);
+    };
+    const handleClickOutsideSlash = (e: MouseEvent) => {
+      const target = e.target as Node;
+      if (
+        slashMenuRef.current &&
+        !slashMenuRef.current.contains(target) &&
+        quillRef.current &&
+        !quillRef.current.contains(target)
+      ) {
+        setShowSlashMenu(false);
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    document.addEventListener("mousedown", handleClickOutsideSlash);
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+      document.removeEventListener("mousedown", handleClickOutsideSlash);
+    };
+  }, [showSlashMenu]);
 
   // Quick action handlers
   const handleLink = useCallback(() => {
@@ -629,6 +737,84 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     [] // Empty dependency array - function never changes
   );
 
+  // Execute slash command: remove "/command" text then run Quill action
+  const handleSlashCommand = useCallback(
+    (command: { key: string; label: string }) => {
+      const quill = quillEditorRef.current;
+      if (!quill) return;
+
+      const range = quill.getSelection(true);
+      if (!range) return;
+
+      let lineStartIndex = 0;
+      let textLength = 0;
+      try {
+        const [line, offset] = quill.getLine(range.index);
+        if (line != null && typeof offset === "number") {
+          lineStartIndex = range.index - offset;
+          textLength = offset;
+        }
+      } catch {
+        const textBeforeCursor = quill.getText(0, range.index);
+        const lineStartInText = textBeforeCursor.lastIndexOf("\n") + 1;
+        const lineText = textBeforeCursor.slice(lineStartInText);
+        if (!lineText.startsWith("/")) return;
+        lineStartIndex = range.index - lineText.length;
+        textLength = lineText.length;
+      }
+      if (textLength <= 0) return;
+      quill.deleteText(lineStartIndex, textLength, "user");
+
+      switch (command.key) {
+        case "image":
+          imageHandler();
+          break;
+        case "link": {
+          const sel = quill.getSelection(true);
+          if (sel && sel.length > 0) {
+            const url = prompt("Enter URL:");
+            if (url) quill.format("link", url);
+          }
+          break;
+        }
+        case "bullet":
+          quill.format("list", "bullet");
+          break;
+        case "number":
+          quill.format("list", "ordered");
+          break;
+        case "blockquote":
+          quill.format("blockquote", true);
+          break;
+        case "pullquote":
+          quill.format("blockquote", true);
+          try {
+            const cur = quill.getSelection(true);
+            if (cur) {
+              const [leaf] = quill.getLeaf(cur.index);
+              let node = leaf?.domNode as HTMLElement | undefined;
+              while (node && node !== quill.root) {
+                if (node.classList) {
+                  node.classList.add("pull-quote");
+                  break;
+                }
+                node = node.parentElement ?? undefined;
+              }
+            }
+          } catch {
+            // ignore if getLeaf not available
+          }
+          break;
+        default:
+          break;
+      }
+
+      setShowSlashMenu(false);
+      quill.focus();
+    },
+    [imageHandler]
+  );
+
   // Quill modules configuration - stable, doesn't recreate on blogSlug change
   const modules = useMemo(
     () => ({
@@ -657,6 +843,41 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
       },
       clipboard: {
         matchVisual: false,
+      },
+      keyboard: {
+        bindings: {
+          slash: {
+            key: "/",
+            handler(
+              this: { quill: any },
+              range: { index: number },
+              _context: unknown
+            ) {
+              const quill = this.quill;
+              if (!quill) return true;
+
+              try {
+                const [line, offset] = quill.getLine(range.index);
+                if (!line || offset !== 0) return true;
+
+                requestAnimationFrame(() => {
+                  const bounds = quill.getBounds(range.index);
+                  if (!bounds) return;
+                  const editorRect = quill.root.getBoundingClientRect();
+                  setSlashQuery("");
+                  setShowSlashMenu(true);
+                  setSlashPosition({
+                    top: editorRect.top + bounds.top + bounds.height,
+                    left: editorRect.left + bounds.left,
+                  });
+                });
+              } catch {
+                // ignore
+              }
+              return true;
+            },
+          },
+        },
       },
     }),
     [imageHandler] // Only depends on imageHandler, which is stable
@@ -800,6 +1021,81 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
             placeholder={placeholder}
           />
         </div>
+        {/* Slash command menu */}
+        {showSlashMenu && (() => {
+            const filteredCommands = SLASH_COMMANDS.filter((cmd) =>
+              cmd.key.includes(slashQuery.toLowerCase())
+            );
+            return (
+              <div
+                ref={slashMenuRef}
+                className="slash-menu"
+                style={{
+                  position: "fixed",
+                  top: `${slashPosition.top}px`,
+                  left: `${slashPosition.left}px`,
+                  zIndex: 1000,
+                  display: "flex",
+                  flexDirection: "column",
+                  padding: "4px 0",
+                  minWidth: "180px",
+                  backgroundColor: isDark ? "#1f2937" : "#ffffff",
+                  border: `1px solid ${isDark ? "#374151" : "#e5e7eb"}`,
+                  borderRadius: "6px",
+                  boxShadow:
+                    "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
+                }}
+              >
+                {slashQuery === "" && (
+                  <div
+                    style={{
+                      padding: "6px 12px",
+                      fontSize: "12px",
+                      color: isDark ? "#9ca3af" : "#6b7280",
+                    }}
+                  >
+                    Type to filter commands…
+                  </div>
+                )}
+                {filteredCommands.map((cmd) => (
+                  <button
+                    key={cmd.key}
+                    type="button"
+                    onClick={() => handleSlashCommand(cmd)}
+                    style={{
+                      width: "100%",
+                      padding: "8px 12px",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "10px",
+                      textAlign: "left",
+                      backgroundColor: "transparent",
+                      border: "none",
+                      borderRadius: "4px",
+                      cursor: "pointer",
+                      color: isDark ? "#e5e7eb" : "#374151",
+                      fontSize: "14px",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.backgroundColor = isDark
+                        ? "#374151"
+                        : "#f3f4f6";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = "transparent";
+                    }}
+                  >
+                    <Icon
+                      name={cmd.icon}
+                      size="sm"
+                      className="shrink-0"
+                    />
+                    {cmd.label}
+                  </button>
+                ))}
+              </div>
+            );
+          })()}
         {/* Selection Tooltip */}
         {showTooltip && (
           <div
