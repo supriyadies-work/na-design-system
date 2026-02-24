@@ -12,10 +12,27 @@ import { useTheme } from "next-themes";
 import type { PendingImage } from "@/lib/helpers/pendingImageUpload";
 import type { IconName } from "@/components/atoms/Icon";
 import { Icon } from "@/components/atoms/Icon";
+import LinkEditorModal from "@/components/molecules/Modal/LinkEditorModal";
+
+
 import "react-quill-new/dist/quill.snow.css";
 
 // Store Quill from react-quill-new when it loads (Quill 2 doesn't use __quill on DOM)
 let QuillClass: { find: (el: HTMLElement) => any } | null = null;
+
+/** Find the range (index, length) of the first link with the given URL in the editor content. */
+function getLinkRange(quill: any, url: string): { index: number; length: number } | null {
+  if (!quill || typeof quill.getContents !== "function") return null;
+  const delta = quill.getContents();
+  if (!delta || !Array.isArray(delta.ops)) return null;
+  let index = 0;
+  for (const op of delta.ops) {
+    const len = typeof op.insert === "string" ? op.insert.length : 1;
+    if (op.attributes?.link === url) return { index, length: len };
+    index += len;
+  }
+  return null;
+}
 
 const SLASH_COMMANDS: { key: string; label: string; icon: IconName }[] = [
   { key: "image", label: "Insert Image", icon: "image" },
@@ -75,6 +92,8 @@ interface RichTextEditorProps {
   className?: string;
   onPendingImagesChange?: (images: PendingImage[]) => void; // Callback untuk pending images
   testId?: string;
+  /** When provided, link hover will fetch preview via this callback. If omitted or fetch fails, fallback tooltip (URL only) is shown. */
+  fetchLinkPreview?: (url: string) => Promise<{ title: string | null }>;
 }
 
 const RichTextEditor: React.FC<RichTextEditorProps> = ({
@@ -85,6 +104,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
   className = "",
   onPendingImagesChange,
   testId,
+  fetchLinkPreview,
 }) => {
   const { theme } = useTheme();
   const [mounted, setMounted] = useState(false);
@@ -103,6 +123,28 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
   const [showSlashMenu, setShowSlashMenu] = useState(false);
   const [slashQuery, setSlashQuery] = useState("");
   const [slashPosition, setSlashPosition] = useState({ top: 0, left: 0 });
+  const [isLinkModalOpen, setIsLinkModalOpen] = useState(false);
+  const [linkDefaults, setLinkDefaults] = useState<{ text: string; url: string }>({
+    text: "",
+    url: "",
+  });
+  const linkSelectionRef = useRef<any>(null);
+  const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const fetchTargetUrlRef = useRef<string | null>(null);
+  const previewCacheRef = useRef<Map<string, { title: string | null }>>(new Map());
+  const hidePreviewTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const linkRangeRef = useRef<{ index: number; length: number; text: string } | null>(null);
+
+  const [hoveredLink, setHoveredLink] = useState<{
+    url: string;
+    top: number;
+    left: number;
+  } | null>(null);
+
+  const [linkPreviewData, setLinkPreviewData] = useState<{
+    title?: string | null;
+    loading: boolean;
+  }>({ loading: false });
 
   // Helper to capture Quill instance from DOM (Quill 2 uses Quill.find(), not __quill)
   const captureQuillInstance = useCallback(() => {
@@ -464,26 +506,157 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     };
   }, [showSlashMenu]);
 
+  const clearPreview = useCallback(() => {
+    if (hidePreviewTimeoutRef.current) {
+      clearTimeout(hidePreviewTimeoutRef.current);
+      hidePreviewTimeoutRef.current = null;
+    }
+    linkRangeRef.current = null;
+    fetchTargetUrlRef.current = null;
+    setHoveredLink(null);
+    setLinkPreviewData({ loading: false });
+  }, []);
+
+  const cancelHidePreview = useCallback(() => {
+    if (hidePreviewTimeoutRef.current) {
+      clearTimeout(hidePreviewTimeoutRef.current);
+      hidePreviewTimeoutRef.current = null;
+    }
+  }, []);
+
+  useEffect(() => {
+  if (!mounted || !quillReady || !quillEditorRef.current) return;
+
+  const editor = quillEditorRef.current.root as HTMLElement;
+
+  const handleMouseOver = (e: MouseEvent) => {
+    const target = e.target as HTMLElement;
+    const link = target.closest("a");
+
+    if (!link) return;
+
+    const rect = link.getBoundingClientRect();
+    const url = link.getAttribute("href") || "";
+
+    hoverTimeoutRef.current = setTimeout(() => {
+      cancelHidePreview();
+      const quill = quillEditorRef.current;
+      const range = quill ? getLinkRange(quill, url) : null;
+      const text = link ? (link.textContent || "").trim() : "";
+      linkRangeRef.current =
+        range ? { index: range.index, length: range.length, text } : null;
+      setHoveredLink({
+        url,
+        top: rect.bottom + 8,
+        left: rect.left + rect.width / 2,
+      });
+
+      if (fetchLinkPreview) {
+        const cached = previewCacheRef.current.get(url);
+        if (cached !== undefined) {
+          setLinkPreviewData({ title: cached.title, loading: false });
+        } else {
+          setLinkPreviewData({ loading: true });
+          fetchTargetUrlRef.current = url;
+          fetchLinkPreview(url)
+            .then((data) => {
+              const title =
+                typeof data?.title === "string"
+                  ? data.title
+                  : (data as any)?.data?.title ?? null;
+              const result = { title: title ?? null };
+              if (fetchTargetUrlRef.current === url) {
+                previewCacheRef.current.set(url, result);
+                setLinkPreviewData({
+                  ...result,
+                  loading: false,
+                });
+              }
+            })
+            .catch(() => {
+              if (fetchTargetUrlRef.current === url) {
+                setLinkPreviewData({ loading: false });
+              }
+            });
+        }
+      }
+    }, 150);
+  };
+
+  const handleMouseOut = () => {
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
+      hoverTimeoutRef.current = null;
+    }
+    cancelHidePreview();
+    hidePreviewTimeoutRef.current = setTimeout(clearPreview, 200);
+  };
+
+  editor.addEventListener("mouseover", handleMouseOver);
+  editor.addEventListener("mouseout", handleMouseOut);
+
+  return () => {
+    editor.removeEventListener("mouseover", handleMouseOver);
+    editor.removeEventListener("mouseout", handleMouseOut);
+    cancelHidePreview();
+    if (hidePreviewTimeoutRef.current) {
+      clearTimeout(hidePreviewTimeoutRef.current);
+    }
+  };
+}, [mounted, quillReady, fetchLinkPreview, clearPreview, cancelHidePreview]);
+
+  const applyLink = useCallback(
+    ({ text, url }: { text: string; url: string }) => {
+      const quill = quillEditorRef.current;
+      if (!quill) return;
+  
+      let finalUrl = url.trim();
+      if (!/^https?:\/\//i.test(finalUrl)) {
+        finalUrl = "https://" + finalUrl;
+      }
+  
+      try {
+        const parsed = new URL(finalUrl);
+        if (!["http:", "https:"].includes(parsed.protocol)) {
+          return;
+        }
+      } catch {
+        return;
+      }
+  
+      const selection = linkSelectionRef.current;
+  
+      const displayText = text || finalUrl;
+  
+      if (selection && selection.length > 0) {
+        quill.deleteText(selection.index, selection.length);
+        quill.insertText(selection.index, displayText, { link: finalUrl });
+        quill.setSelection(selection.index + displayText.length);
+      } else {
+        const index = selection?.index ?? quill.getLength();
+        quill.insertText(index, displayText, { link: finalUrl });
+        quill.setSelection(index + displayText.length);
+      }
+    },
+    []
+  );
+
   // Quick action handlers
   const handleLink = useCallback(() => {
     const quill = quillEditorRef.current;
     if (!quill) return;
-
+  
     const selection = quill.getSelection(true);
-    if (!selection || selection.length === 0) return;
-
-    const url = prompt("Enter URL:");
-    if (!url) return;
-
-    quill.format("link", url);
-
-    // Close dropdowns
-    const alignMenu = document.getElementById("align-menu");
-    const fontMenu = document.getElementById("font-menu");
-    if (alignMenu) alignMenu.style.display = "none";
-    if (fontMenu) fontMenu.style.display = "none";
-
-    setShowTooltip(false);
+    linkSelectionRef.current = selection;
+  
+    if (selection && selection.length > 0) {
+      const selectedText = quill.getText(selection.index, selection.length);
+      setLinkDefaults({ text: selectedText, url: "" });
+    } else {
+      setLinkDefaults({ text: "", url: "" });
+    }
+  
+    setIsLinkModalOpen(true);
   }, []);
 
   const handleAlign = useCallback((align: string) => {
@@ -824,11 +997,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
           imageHandler();
           break;
         case "link": {
-          const sel = quill.getSelection(true);
-          if (sel && sel.length > 0) {
-            const url = prompt("Enter URL:");
-            if (url) quill.format("link", url);
-          }
+          handleLink();
           break;
         }
         case "collapsible": {
@@ -1211,6 +1380,14 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     `
     }
   `;
+
+  const iconButtonStyle: React.CSSProperties = {
+    background: "transparent",
+    border: "none",
+    cursor: "pointer",
+    fontSize: 14,
+    opacity: 0.8,
+  };
 
   return (
     <div
@@ -1637,6 +1814,181 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
             </div>
           </div>
         )}
+        {hoveredLink &&
+          (fetchLinkPreview &&
+          (linkPreviewData.loading || linkPreviewData.title !== undefined) ? (
+           <div
+            onMouseEnter={cancelHidePreview}
+            onMouseLeave={clearPreview}
+            style={{
+              position: "fixed",
+              top: hoveredLink.top,
+              left: hoveredLink.left,
+              transform: "translateX(-50%)",
+              zIndex: 1500,
+              backgroundColor: isDark ? "#1f2937" : "#ffffff",
+              border: `1px solid ${isDark ? "#374151" : "#e5e7eb"}`,
+              borderRadius: "12px",
+              padding: "14px",
+              width: "360px",
+              boxShadow:
+                "0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05)",
+            }}
+          >
+            {/* TOP ROW */}
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                marginBottom: 10,
+                gap: 12,
+              }}
+            >
+              {/* Link Blue */}
+              <div
+                style={{
+                  flex: 1,
+                  fontSize: 13,
+                  fontWeight: 500,
+                  color: "#60a5fa",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                  cursor: "pointer",
+                }}
+                onClick={() =>
+                  window.open(hoveredLink.url, "_blank", "noopener,noreferrer")
+                }
+                title={hoveredLink.url}
+              >
+                {hoveredLink.url}
+              </div>
+
+              {/* Actions */}
+              <div style={{ display: "flex", gap: 10 }}>
+                {/* Edit */}
+                <button
+                  onClick={() => {
+                    const range = linkRangeRef.current;
+                    if (!range) return;
+                    linkSelectionRef.current = {
+                      index: range.index,
+                      length: range.length,
+                    };
+                    setLinkDefaults({
+                      text: range.text,
+                      url: hoveredLink.url,
+                    });
+                    setIsLinkModalOpen(true);
+                    clearPreview();
+                  }}
+                  style={iconButtonStyle}
+                  title="Edit link"
+                  onMouseEnter={(e) => (e.currentTarget.style.opacity = "1")}
+                  onMouseLeave={(e) => (e.currentTarget.style.opacity = "0.8")}
+                >
+                  ✏️
+                </button>
+
+                {/* Copy */}
+                <button
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    navigator.clipboard.writeText(hoveredLink.url);
+                  }}
+                  style={iconButtonStyle}
+                  title="Copy link"
+                  onMouseEnter={(e) => (e.currentTarget.style.opacity = "1")}
+                  onMouseLeave={(e) => (e.currentTarget.style.opacity = "0.8")}
+                >
+                  🔗
+                </button>
+
+                {/* Delete */}
+                <button
+                  onClick={() => {
+                    const quill = quillEditorRef.current;
+                    if (!quill) return;
+                    const range = linkRangeRef.current ?? (hoveredLink?.url ? getLinkRange(quill, hoveredLink.url) : null);
+                    if (!range) return;
+                    quill.setSelection(range.index, range.length);
+                    quill.format("link", false);
+                    clearPreview();
+                  }}
+                  style={iconButtonStyle}
+                  title="Remove link"
+                  onMouseEnter={(e) => (e.currentTarget.style.opacity = "1")}
+                  onMouseLeave={(e) => (e.currentTarget.style.opacity = "0.8")}
+                >
+                  🗑
+                </button>
+              </div>
+            </div>
+
+            {/* TITLE */}
+            <div
+              style={{
+                marginBottom: 6,
+                fontWeight: 600,
+                fontSize: 14,
+                lineHeight: 1.35,
+                color: isDark ? "#f3f4f6" : "#111827",
+              }}
+            >
+              {linkPreviewData.loading
+                ? "Loading preview..."
+                : linkPreviewData.title || "No preview available"}
+            </div>
+          </div>
+          ) : (
+            <div
+              onMouseEnter={cancelHidePreview}
+              onMouseLeave={clearPreview}
+              style={{
+                position: "fixed",
+                top: hoveredLink.top,
+                left: hoveredLink.left,
+                transform: "translateX(-50%)",
+                zIndex: 1500,
+                backgroundColor: isDark ? "#1f2937" : "#ffffff",
+                border: `1px solid ${isDark ? "#374151" : "#e5e7eb"}`,
+                borderRadius: "8px",
+                padding: "8px 12px",
+                fontSize: "13px",
+                maxWidth: "320px",
+                boxShadow:
+                  "0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06)",
+                wordBreak: "break-all",
+              }}
+            >
+              <div
+                style={{
+                  fontWeight: 500,
+                  marginBottom: "4px",
+                  color: isDark ? "#e5e7eb" : "#111827",
+                }}
+              >
+                Link preview
+              </div>
+
+              <div
+                style={{
+                  color: isDark ? "#9ca3af" : "#374151",
+                }}
+              >
+                {hoveredLink.url}
+              </div>
+            </div>
+          ))}
+        <LinkEditorModal
+          isOpen={isLinkModalOpen}
+          onClose={() => setIsLinkModalOpen(false)}
+          onSubmit={applyLink}
+          defaultText={linkDefaults.text}
+          defaultUrl={linkDefaults.url}
+        />
       </div>
     </div>
   );
