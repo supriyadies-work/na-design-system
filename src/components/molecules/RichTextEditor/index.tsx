@@ -338,7 +338,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     return () => editorElement.removeEventListener("keydown", onSlashKeyDown, true);
   }, [mounted, quillReady]);
 
-  // Collapsible: toggle .is-open pada header dan next sibling (body)
+  // Collapsible grouping logic (stable multi-line support)
   useEffect(() => {
     if (!mounted || !quillReady || !quillEditorRef.current) return;
 
@@ -348,11 +348,22 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
       const header = (e.target as HTMLElement)?.closest(".ql-collapsible-header");
       if (!header) return;
 
-      const body = header.nextElementSibling as HTMLElement | null;
-      if (!body) return;
+      const isOpen = header.classList.toggle("is-open");
 
-      header.classList.toggle("is-open");
-      body.classList.toggle("is-open");
+      let next = header.nextElementSibling as HTMLElement | null;
+
+      while (next) {
+        if (next.classList.contains("ql-collapsible-header")) break;
+        if (!next.classList.contains("ql-collapsible-body")) break;
+      
+        if (isOpen) {
+          next.classList.add("is-open");
+        } else {
+          next.classList.remove("is-open");
+        }
+      
+        next = next.nextElementSibling as HTMLElement | null;
+      }
     };
 
     editor.addEventListener("click", onClick);
@@ -822,11 +833,25 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
         }
         case "collapsible": {
           const index = lineStartIndex;
-
+        
           quill.insertText(index, "Header\n", { "details-summary": true });
-          quill.insertText(index + 8, "Content\n");
-
-          quill.setSelection(index);
+          quill.insertText(index + 7, "\n"); 
+        
+          setTimeout(() => {
+            const headers = quill.root.querySelectorAll(".ql-collapsible-header");
+            const lastHeader = headers[headers.length - 1] as HTMLElement;
+            if (lastHeader) {
+              lastHeader.classList.add("is-open");
+        
+              let next = lastHeader.nextElementSibling as HTMLElement | null;
+              if (next) {
+                next.classList.add("ql-collapsible-body");
+                next.classList.add("is-open");
+              }
+            }
+          }, 0);
+        
+          quill.setSelection(index + 8);
           break;
         }
         case "number":
@@ -949,6 +974,60 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
               return true;
             },
           },
+          enterInCollapsible: {
+            key: "Enter",
+            handler: function (this: { quill: any }, range: any) {
+              const quill = this.quill;
+              if (!quill) return true;
+          
+              const [line] = quill.getLine(range.index);
+              if (!line) return true;
+          
+              const node = line.domNode as HTMLElement;
+              const text = node.textContent ?? "";
+          
+              let prev = node.previousElementSibling as HTMLElement | null;
+              let activeHeader: HTMLElement | null = null;
+              let insideCollapsible = true;
+          
+              while (prev) {
+                if (prev.classList.contains("ql-collapsible-header")) {
+                  activeHeader = prev;
+                  break;
+                }
+          
+                // Kalau ketemu block yg bukan body → berarti sudah keluar
+                if (!prev.classList.contains("ql-collapsible-body")) {
+                  insideCollapsible = false;
+                  break;
+                }
+          
+                prev = prev.previousElementSibling as HTMLElement | null;
+              }
+          
+              if (!activeHeader || !insideCollapsible) {
+                return true;
+              }
+          
+              if (text.trim() === "") {
+                node.classList.remove("ql-collapsible-body");
+                node.classList.remove("is-open");
+              
+                return true;
+              }
+          
+              setTimeout(() => {
+                const [newLine] = quill.getLine(range.index + 1);
+                if (newLine) {
+                  const newNode = newLine.domNode as HTMLElement;
+                  newNode.classList.add("ql-collapsible-body");
+                  newNode.classList.add("is-open");
+                }
+              }, 0);
+          
+              return true;
+            },
+          },
         },
       },
     }),
@@ -1030,10 +1109,17 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     .rich-text-editor .ql-editor .ql-collapsible-header + * {
       display: none;
     }
+    .rich-text-editor .ql-editor .ql-collapsible-end {
+      height: 0;
+      padding: 0;
+      margin: 0;
+    }
     .rich-text-editor .ql-editor .ql-collapsible-header.is-open + * {
       display: block;
-      border-top: 1px solid ${isDark ? "#374151" : "#e5e7eb"};
       padding-top: 8px;
+      padding-left: 1.25rem;
+      margin-left: 0.25rem;
+      border-left: 2px solid ${isDark ? "#374151" : "#e5e7eb"};
     }
     .rich-text-editor .ql-editor details summary {
       list-style: none;
@@ -1044,6 +1130,15 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     .rich-text-editor .ql-editor details .ql-details-content {
       border-top: 1px solid ${isDark ? "#374151" : "#e5e7eb"};
       padding-top: 8px;
+    }
+    .rich-text-editor .ql-editor .ql-collapsible-body {
+      display: none;
+    }
+    .rich-text-editor .ql-editor .ql-collapsible-body.is-open {
+      display: block;
+      padding-left: 1.25rem;
+      margin-left: 0.25rem;
+      border-left: 2px solid ${isDark ? "#374151" : "#e5e7eb"};
     }
     .rich-text-editor .ql-editor details[open] summary {
       margin-bottom: 8px;
