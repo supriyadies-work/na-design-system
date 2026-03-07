@@ -16,9 +16,84 @@ import LinkEditorModal from "@/components/molecules/Modal/LinkEditorModal";
 
 
 import "react-quill-new/dist/quill.snow.css";
+import Delta from "quill-delta";
 
 // Store Quill from react-quill-new when it loads (Quill 2 doesn't use __quill on DOM)
 let QuillClass: { find: (el: HTMLElement) => any } | null = null;
+
+function normalizeOrphanCollapsibleHtml(input: string): string {
+  if (!input.includes("ql-collapsible-header")) return input;
+  const root = document.createElement("div");
+  root.innerHTML = input;
+  let changed = false;
+
+  const directChildren = Array.from(root.children);
+  for (const child of directChildren) {
+    if (!(child instanceof HTMLElement)) continue;
+    if (!child.classList.contains("ql-collapsible-header")) continue;
+
+    const wrapper = document.createElement("div");
+    wrapper.className = "ql-collapsible";
+    wrapper.setAttribute("data-open", "true");
+
+    const header = child.cloneNode(true) as HTMLElement;
+    const content = document.createElement("div");
+    content.className = "ql-collapsible-content";
+    const p = document.createElement("p");
+    p.innerHTML = "<br>";
+    content.appendChild(p);
+
+    wrapper.appendChild(header);
+    wrapper.appendChild(content);
+    root.replaceChild(wrapper, child);
+    changed = true;
+  }
+
+  return changed ? root.innerHTML : input;
+}
+
+/**
+ * Insert collapsible at index via scroll API so the wrapper blot (collapsible)
+ * exists. Delta insertion only creates header/content blocks, no container.
+ * Do not call onChange — let Quill text-change trigger handleEditorChange.
+ */
+function insertCollapsibleAt(quill: any, index: number): void {
+  try {
+    const scroll = quill.scroll;
+
+    const container = scroll.create("collapsible");
+    const header = scroll.create("collapsible-header");
+    const content = scroll.create("collapsible-content");
+    const block = scroll.create("block");
+
+    block.appendChild(scroll.create("break"));
+    content.appendChild(block);
+
+    header.appendChild(scroll.create("break"));
+
+    container.appendChild(header);
+    container.appendChild(content);
+
+    const [line] = quill.getLine(index);
+    const ref = line ? quill.constructor.find(line.domNode) : null;
+
+    scroll.insertBefore(container, ref);
+
+    quill.update("user");
+
+    requestAnimationFrame(() => {
+      try {
+        const start = container.offset(scroll);
+        quill.setSelection(start, 0, "silent");
+        quill.focus();
+      } catch {
+        // ignore
+      }
+    });
+  } catch {
+    // ignore
+  }
+}
 
 /** Find the range (index, length) of the first link with the given URL in the editor content. */
 function getLinkRange(quill: any, url: string): { index: number; length: number } | null {
@@ -50,25 +125,69 @@ const ReactQuill = dynamic(
     const Quill = mod.Quill as typeof import("quill").default;
     QuillClass = Quill;
 
-    const Block = Quill.import("blots/block") as any;
+    // Quill.import() can be undefined in some builds/bundles (e.g. dist consumed by na-portal)
+    let Block: any;
+    let Container: any;
+    let Break: any;
+    try {
+      const blockMod = Quill.import?.("blots/block") as any;
+      const containerVal = Quill.import?.("blots/container");
+      const breakVal = Quill.import?.("blots/break");
+      if (blockMod?.default && containerVal && breakVal) {
+        Block = blockMod.default;
+        Container = containerVal;
+        Break = breakVal;
+      }
+    } catch {
+      /* ignore */
+    }
+    if (!Block || !Container || !Break) {
+      const [blockMod, containerMod, breakMod] = await Promise.all([
+        import("quill/blots/block"),
+        import("quill/blots/container"),
+        import("quill/blots/break"),
+      ]);
+      Block = (blockMod as any).default;
+      Container = (containerMod as any).default;
+      Break = (breakMod as any).default;
+    }
 
     // -------------------------------------------------------------------------
-    // COLLAPSIBLE: linear only. Satu Block (header) + body = paragraph biasa.
-    // Tidak ada Container. Toggle via CSS sibling (.ql-collapsible-header + *).
+    // COLLAPSIBLE: Container so content is real Block children — Enter, slash,
+    // selection, and Delta all work inside content. Insert via scroll API, not
+    // insert({ collapsible: true }), because Container is not an Embed.
     // -------------------------------------------------------------------------
 
-    class DetailsSummary extends Block {
-      static blotName = "details-summary";
+    class CollapsibleHeader extends Block {
+      static blotName = "collapsible-header";
       static tagName = "DIV";
+      static className = "ql-collapsible-header";
+    }
 
-      static create(value?: unknown) {
-        const node = super.create(value) as HTMLElement;
-        node.classList.add("ql-collapsible-header");
+    class CollapsibleContent extends Container {
+      static blotName = "collapsible-content";
+      static tagName = "DIV";
+      static className = "ql-collapsible-content";
+      static allowedChildren = [Block];
+      static defaultChild = Block;
+    }
+
+    class CollapsibleContainer extends Container {
+      static blotName = "collapsible";
+      static tagName = "DIV";
+      static className = "ql-collapsible";
+      static allowedChildren = [CollapsibleHeader, CollapsibleContent];
+
+      static create(open: boolean = true) {
+        const node = super.create() as HTMLElement;
+        node.setAttribute("data-open", String(open));
         return node;
       }
     }
 
-    Quill.register(DetailsSummary);
+    Quill.register("blots/collapsible-header", CollapsibleHeader);
+    Quill.register("blots/collapsible-content", CollapsibleContent);
+    Quill.register("blots/collapsible", CollapsibleContainer);
 
     return mod.default;
   },
@@ -134,6 +253,8 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
   const previewCacheRef = useRef<Map<string, { title: string | null }>>(new Map());
   const hidePreviewTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const linkRangeRef = useRef<{ index: number; length: number; text: string } | null>(null);
+  const isRunningSlashCommandRef = useRef(false);
+  const lastEnterKeydownAtRef = useRef(0);
 
   const [hoveredLink, setHoveredLink] = useState<{
     url: string;
@@ -170,11 +291,15 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
 
   // Try to capture Quill instance when onChange fires
   const handleEditorChange = useCallback(
-    (content: string) => {
-      onChange(content);
+    (content: string, _delta?: any, source?: string) => {
+      const normalizedContent =
+        typeof content === "string" ? normalizeOrphanCollapsibleHtml(content) : content;
+      if (source === "api" || source === "silent") return;
+      if (normalizedContent === value) return;
+      onChange(normalizedContent);
       captureQuillInstance();
     },
-    [onChange, captureQuillInstance]
+    [onChange, captureQuillInstance, value]
   );
 
   // Callback for selection change to trigger Quill instance capture
@@ -203,6 +328,8 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  const normalizedValue = typeof value === "string" ? normalizeOrphanCollapsibleHtml(value) : value;
 
   // Setup Quill editor instance - poll until we capture (Quill loads async)
   useEffect(() => {
@@ -344,43 +471,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     };
   }, [mounted, quillReady]);
 
-  // Fallback: open slash menu on "/" at line start via keydown (Quill keyboard binding may not fire)
-  useEffect(() => {
-    if (!mounted || !quillReady || !quillEditorRef.current) return;
-    const quill = quillEditorRef.current;
-    const editorElement = quill.root;
-
-    const onSlashKeyDown = (e: KeyboardEvent) => {
-      if (e.key !== "/" || e.defaultPrevented || e.isComposing) return;
-      const range = quill.getSelection();
-      if (range == null || !quill.hasFocus()) return;
-      try {
-        const [line, offset] = quill.getLine(range.index);
-        if (!line || offset !== 0) return;
-        e.preventDefault();
-        quill.insertText(range.index, "/", "user");
-        quill.setSelection(range.index + 1);
-        requestAnimationFrame(() => {
-          const bounds = quill.getBounds(range.index);
-          if (!bounds) return;
-          const editorRect = editorElement.getBoundingClientRect();
-          setSlashQuery("");
-          setShowSlashMenu(true);
-          setSlashPosition({
-            top: editorRect.top + bounds.top + bounds.height,
-            left: editorRect.left + bounds.left,
-          });
-        });
-      } catch {
-        // ignore
-      }
-    };
-
-    editorElement.addEventListener("keydown", onSlashKeyDown, true);
-    return () => editorElement.removeEventListener("keydown", onSlashKeyDown, true);
-  }, [mounted, quillReady]);
-
-  // Collapsible grouping logic (stable multi-line support)
+  // Collapsible toggle: use click bubbling so Quill keeps selection/focus flow
   useEffect(() => {
     if (!mounted || !quillReady || !quillEditorRef.current) return;
 
@@ -390,26 +481,87 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
       const header = (e.target as HTMLElement)?.closest(".ql-collapsible-header");
       if (!header) return;
 
-      const isOpen = header.classList.toggle("is-open");
-
-      let next = header.nextElementSibling as HTMLElement | null;
-
-      while (next) {
-        if (next.classList.contains("ql-collapsible-header")) break;
-        if (!next.classList.contains("ql-collapsible-body")) break;
-      
-        if (isOpen) {
-          next.classList.add("is-open");
-        } else {
-          next.classList.remove("is-open");
+      const container = header.parentElement;
+      if (!container) return;
+      let containerNode = container;
+      let content = containerNode.querySelector(".ql-collapsible-content") as HTMLElement | null;
+      if (!content && containerNode.classList.contains("ql-editor")) {
+        // Repair orphan header in-place on user interaction.
+        const wrapper = document.createElement("div");
+        wrapper.className = "ql-collapsible";
+        wrapper.setAttribute("data-open", "true");
+        const contentNode = document.createElement("div");
+        contentNode.className = "ql-collapsible-content";
+        const p = document.createElement("p");
+        p.innerHTML = "<br>";
+        contentNode.appendChild(p);
+        const parent = header.parentElement;
+        if (parent) {
+          parent.replaceChild(wrapper, header);
+          wrapper.appendChild(header);
+          wrapper.appendChild(contentNode);
+          containerNode = wrapper;
+          content = contentNode;
+          const q = quillEditorRef.current;
+          if (q?.root) onChange(q.root.innerHTML);
         }
-      
-        next = next.nextElementSibling as HTMLElement | null;
       }
+      if (!content) return;
+      const open = containerNode.getAttribute("data-open") === "true";
+      containerNode.setAttribute("data-open", String(!open));
+
+      const q = quillEditorRef.current;
+      if (q?.root) onChange(q.root.innerHTML);
     };
 
     editor.addEventListener("click", onClick);
     return () => editor.removeEventListener("click", onClick);
+  }, [mounted, quillReady, onChange]);
+
+  useEffect(() => {
+    if (!mounted || !quillReady || !quillEditorRef.current) return;
+    const quill = quillEditorRef.current;
+    const editor = quill.root as HTMLElement;
+    const onKeyDownCapture = (e: KeyboardEvent) => {
+      if (e.key !== "Enter") return;
+      lastEnterKeydownAtRef.current = Date.now();
+    };
+    const onTextChange = () => {
+      // no-op; used only to pair with Enter keydown for timing
+    };
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== "Enter") return;
+      const target = e.target as HTMLElement;
+      const header = target?.closest?.(".ql-collapsible-header");
+      if (!header) return;
+      e.preventDefault();
+      const container = header.parentElement;
+      if (!container) return;
+      try {
+        const blot = quill.constructor?.find?.(container);
+        if (blot?.children?.length) {
+          const headerBlot = blot.children.head;
+          const contentStart =
+            blot.offset(quill.scroll) + (headerBlot?.length() ?? 0);
+          quill.setSelection(contentStart, 0, "silent");
+          quill.focus();
+          return;
+        }
+      } catch {
+        // fallback
+      }
+      const contentEl = container.querySelector(".ql-collapsible-content") as HTMLElement | null;
+      if (contentEl) contentEl.focus();
+      else quill.focus();
+    };
+    editor.addEventListener("keydown", onKeyDownCapture, true);
+    editor.addEventListener("keydown", onKeyDown);
+    quill.on("text-change", onTextChange);
+    return () => {
+      editor.removeEventListener("keydown", onKeyDownCapture, true);
+      editor.removeEventListener("keydown", onKeyDown);
+      quill.off("text-change", onTextChange);
+    };
   }, [mounted, quillReady]);
 
   // Slash command: update query when user types after "/" (only while menu is open)
@@ -827,19 +979,12 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
             ) {
               try {
                 const selection = quill.getSelection(true);
-                let index = 0;
-
-                if (selection && selection.index !== null) {
-                  index = selection.index;
-                } else {
-                  const length = quill.getLength();
-                  index = Math.max(0, length - 1);
-                }
-
-                // Use insertEmbed - Quill's native method for images
+                const index =
+                  selection?.index ?? Math.max(0, quill.getLength() - 1);
                 quill.insertEmbed(index, "image", dataUrl, "user");
-
-                // Set data attribute after insertion
+                quill.setSelection(index + 1);
+                const contentAfterInsert = quill.root.innerHTML;
+                if (contentAfterInsert !== value) onChange(contentAfterInsert);
                 setTimeout(() => {
                   const imgElements = quill.root.querySelectorAll(
                     `img[src="${dataUrl}"]`
@@ -847,23 +992,11 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
                   if (imgElements.length > 0) {
                     const imgEl = imgElements[0] as HTMLImageElement;
                     imgEl.setAttribute("data-pending-id", imageId);
-                    // Ensure image is visible
                     imgEl.style.maxWidth = "100%";
                     imgEl.style.height = "auto";
                     imgEl.style.display = "block";
                   }
                 }, 50);
-
-                quill.setSelection(index + 1);
-
-                // Update content immediately
-                setTimeout(() => {
-                  const content = quill.root.innerHTML;
-                  if (content !== value) {
-                    onChange(content);
-                  }
-                }, 100);
-
                 inserted = true;
               } catch (error) {
                 console.warn("Quill insertEmbed failed:", error);
@@ -967,32 +1100,36 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
   // Execute slash command: remove "/command" text then run Quill action
   const handleSlashCommand = useCallback(
     (command: { key: string; label: string }) => {
-      const quill = quillEditorRef.current;
-      if (!quill) return;
-
-      const range = quill.getSelection(true);
-      if (!range) return;
-
-      let lineStartIndex = 0;
-      let textLength = 0;
+      if (isRunningSlashCommandRef.current) return;
+      isRunningSlashCommandRef.current = true;
       try {
-        const [line, offset] = quill.getLine(range.index);
-        if (line != null && typeof offset === "number") {
-          lineStartIndex = range.index - offset;
-          textLength = offset;
-        }
-      } catch {
-        const textBeforeCursor = quill.getText(0, range.index);
-        const lineStartInText = textBeforeCursor.lastIndexOf("\n") + 1;
-        const lineText = textBeforeCursor.slice(lineStartInText);
-        if (!lineText.startsWith("/")) return;
-        lineStartIndex = range.index - lineText.length;
-        textLength = lineText.length;
-      }
-      if (textLength <= 0) return;
-      quill.deleteText(lineStartIndex, textLength, "user");
+        const quill = quillEditorRef.current;
+        if (!quill) return;
 
-      switch (command.key) {
+        const range = quill.getSelection(true);
+        if (!range) return;
+
+        let lineStartIndex = 0;
+        let textLength = 0;
+        try {
+          const [line, offset] = quill.getLine(range.index);
+          if (line != null && typeof offset === "number") {
+            lineStartIndex = range.index - offset;
+            textLength = offset;
+          }
+        } catch {
+          const textBeforeCursor = quill.getText(0, range.index);
+          const lineStartInText = textBeforeCursor.lastIndexOf("\n") + 1;
+          const lineText = textBeforeCursor.slice(lineStartInText);
+          if (!lineText.startsWith("/")) return;
+          lineStartIndex = range.index - lineText.length;
+          textLength = lineText.length;
+        }
+        if (textLength <= 0) return;
+        quill.deleteText(lineStartIndex, textLength, "user");
+
+        let shouldFocusAfterCommand = true;
+        switch (command.key) {
         case "image":
           imageHandler();
           break;
@@ -1001,26 +1138,12 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
           break;
         }
         case "collapsible": {
-          const index = lineStartIndex;
-        
-          quill.insertText(index, "Header\n", { "details-summary": true });
-          quill.insertText(index + 7, "\n"); 
-        
-          setTimeout(() => {
-            const headers = quill.root.querySelectorAll(".ql-collapsible-header");
-            const lastHeader = headers[headers.length - 1] as HTMLElement;
-            if (lastHeader) {
-              lastHeader.classList.add("is-open");
-        
-              let next = lastHeader.nextElementSibling as HTMLElement | null;
-              if (next) {
-                next.classList.add("ql-collapsible-body");
-                next.classList.add("is-open");
-              }
-            }
-          }, 0);
-        
-          quill.setSelection(index + 8);
+          try {
+            insertCollapsibleAt(quill, lineStartIndex);
+            shouldFocusAfterCommand = false;
+          } catch {
+            // ignore
+          }
           break;
         }
         case "number":
@@ -1050,10 +1173,15 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
           break;
         default:
           break;
-      }
+        }
 
-      setShowSlashMenu(false);
-      quill.focus();
+        setShowSlashMenu(false);
+        if (shouldFocusAfterCommand) {
+          quill.focus();
+        }
+      } finally {
+        isRunningSlashCommandRef.current = false;
+      }
     },
     [imageHandler]
   );
@@ -1089,24 +1217,50 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
       },
       keyboard: {
         bindings: {
-          deleteDetailsContainer: {
-            key: "Backspace",
+          enter: {
+            key: "Enter",
             collapsed: true,
-            handler(this: { quill: any }, range: { index: number }) {
+            handler(this: any, range: any) {
               const quill = this.quill;
-              if (!quill) return true;
+              if (!range) return true;
 
               const [line] = quill.getLine(range.index);
               if (!line) return true;
 
-              if (line.statics?.blotName === "details-summary") {
-                const text = (line.domNode?.textContent ?? "").trim();
-
-                if (text.length === 0) {
-                  if (line.next) line.next.remove();
-                  line.remove();
-                  return false;
+              let parent: any = line.parent;
+              let collapsible: any = null;
+              while (parent) {
+                if (parent.statics?.blotName === "collapsible") {
+                  collapsible = parent;
+                  break;
                 }
+                parent = parent.parent;
+              }
+
+              if (!collapsible) return true;
+
+              let content: any = null;
+              collapsible.children.forEach((child: any) => {
+                if (child.statics?.blotName === "collapsible-content")
+                  content = child;
+              });
+              if (!content) return true;
+
+              const isLastLine = line === content.children.tail;
+              const lineLen = line?.length?.();
+              const lineHtml = (line?.domNode?.innerHTML ?? "").trim();
+              const isEmpty =
+                lineLen <= 1 || lineHtml === "<br>";
+
+              if (isLastLine && isEmpty) {
+                const lineStart = line.offset(quill.scroll);
+                const lineLength = line.length();
+                quill.deleteText(lineStart, lineLength, "user");
+                const insertIndex =
+                  collapsible.offset(quill.scroll) + collapsible.length();
+                quill.insertText(insertIndex, "\n", "user");
+                quill.setSelection(insertIndex + 1, 0, "silent");
+                return false;
               }
 
               return true;
@@ -1116,12 +1270,10 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
             key: "/",
             handler(
               this: { quill: any },
-              range: { index: number },
-              _context: unknown
+              range: { index: number }
             ) {
               const quill = this.quill;
               if (!quill) return true;
-
               try {
                 const [line, offset] = quill.getLine(range.index);
                 if (!line || offset !== 0) return true;
@@ -1140,60 +1292,6 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
               } catch {
                 // ignore
               }
-              return true;
-            },
-          },
-          enterInCollapsible: {
-            key: "Enter",
-            handler: function (this: { quill: any }, range: any) {
-              const quill = this.quill;
-              if (!quill) return true;
-          
-              const [line] = quill.getLine(range.index);
-              if (!line) return true;
-          
-              const node = line.domNode as HTMLElement;
-              const text = node.textContent ?? "";
-          
-              let prev = node.previousElementSibling as HTMLElement | null;
-              let activeHeader: HTMLElement | null = null;
-              let insideCollapsible = true;
-          
-              while (prev) {
-                if (prev.classList.contains("ql-collapsible-header")) {
-                  activeHeader = prev;
-                  break;
-                }
-          
-                // Kalau ketemu block yg bukan body → berarti sudah keluar
-                if (!prev.classList.contains("ql-collapsible-body")) {
-                  insideCollapsible = false;
-                  break;
-                }
-          
-                prev = prev.previousElementSibling as HTMLElement | null;
-              }
-          
-              if (!activeHeader || !insideCollapsible) {
-                return true;
-              }
-          
-              if (text.trim() === "") {
-                node.classList.remove("ql-collapsible-body");
-                node.classList.remove("is-open");
-              
-                return true;
-              }
-          
-              setTimeout(() => {
-                const [newLine] = quill.getLine(range.index + 1);
-                if (newLine) {
-                  const newNode = newLine.domNode as HTMLElement;
-                  newNode.classList.add("ql-collapsible-body");
-                  newNode.classList.add("is-open");
-                }
-              }, 0);
-          
               return true;
             },
           },
@@ -1223,7 +1321,9 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     "image",
     "video",
     "code-block",
-    "details-summary",
+    "collapsible",
+    "collapsible-header",
+    "collapsible-content",
   ];
 
   const isDark = theme === "dark";
@@ -1252,11 +1352,11 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
       color: ${isDark ? "#9ca3af" : "#6b7280"};
       font-style: normal;
     }
-    .rich-text-editor .ql-editor details {
+    .rich-text-editor .ql-editor .ql-collapsible {
       margin: 12px 0;
     }
     .rich-text-editor .ql-editor .ql-collapsible-header {
-      margin: 12px 0 0;
+      margin: 0;
       cursor: pointer;
       font-weight: 600;
       padding-left: 1.25rem;
@@ -1272,18 +1372,13 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
       top: 0.5em;
       transition: transform 0.15s ease;
     }
-    .rich-text-editor .ql-editor .ql-collapsible-header.is-open::before {
+    .rich-text-editor .ql-editor .ql-collapsible[data-open="true"] .ql-collapsible-header::before {
       transform: rotate(90deg);
     }
-    .rich-text-editor .ql-editor .ql-collapsible-header + * {
-      display: none;
+    .rich-text-editor .ql-editor .ql-collapsible[data-open="false"] .ql-collapsible-content {
+      display: none !important;
     }
-    .rich-text-editor .ql-editor .ql-collapsible-end {
-      height: 0;
-      padding: 0;
-      margin: 0;
-    }
-    .rich-text-editor .ql-editor .ql-collapsible-header.is-open + * {
+    .rich-text-editor .ql-editor .ql-collapsible-content {
       display: block;
       padding-top: 8px;
       padding-left: 1.25rem;
@@ -1299,15 +1394,6 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     .rich-text-editor .ql-editor details .ql-details-content {
       border-top: 1px solid ${isDark ? "#374151" : "#e5e7eb"};
       padding-top: 8px;
-    }
-    .rich-text-editor .ql-editor .ql-collapsible-body {
-      display: none;
-    }
-    .rich-text-editor .ql-editor .ql-collapsible-body.is-open {
-      display: block;
-      padding-left: 1.25rem;
-      margin-left: 0.25rem;
-      border-left: 2px solid ${isDark ? "#374151" : "#e5e7eb"};
     }
     .rich-text-editor .ql-editor details[open] summary {
       margin-bottom: 8px;
@@ -1401,7 +1487,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
         <div ref={quillRef} data-testid={testId}>
           <ReactQuill
             theme="snow"
-            value={value}
+            value={normalizedValue}
             onChange={handleEditorChange}
             onChangeSelection={handleChangeSelection}
             onFocus={handleFocus}
