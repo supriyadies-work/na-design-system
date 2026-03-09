@@ -95,6 +95,61 @@ function insertCollapsibleAt(quill: any, index: number): void {
   }
 }
 
+/**
+ * Returns true if the given index is inside a collapsible container (header or content).
+ * Uses getLine(index) and walks up from the line's domNode.
+ */
+function isInsideCollapsible(quill: any, index: number): boolean {
+  try {
+    const [line] = quill.getLine(index);
+    let node = line?.domNode as HTMLElement | null;
+    while (node && node !== quill.root) {
+      if (node.classList?.contains("ql-collapsible")) return true;
+      node = node.parentElement;
+    }
+  } catch {
+    // ignore
+  }
+  return false;
+}
+
+/**
+ * If the given index is inside a collapsible container (Quill often treats the
+ * boundary after the container as still "inside"), return the index right after
+ * that container so the next insert does not corrupt the collapsible.
+ * Uses getLine(index) and walks up from the line's domNode so we detect
+ * containment by block (line), not just leaf.
+ */
+function normalizeOutsideContainer(quill: any, index: number): number {
+  let out = index;
+  let found = false;
+  let offset = -1;
+  let len = -1;
+  try {
+    const [line] = quill.getLine(index);
+    const startNode = line?.domNode as HTMLElement | null;
+    let node = startNode;
+
+    while (node && node !== quill.root) {
+      if (node.classList?.contains("ql-collapsible")) {
+        const blot = quill.constructor?.find?.(node);
+        if (blot) {
+          const scroll = quill.scroll;
+          offset = blot.offset(scroll);
+          len = blot.length();
+          out = offset + len;
+          found = true;
+        }
+        break;
+      }
+      node = node.parentElement;
+    }
+  } catch {
+    // ignore
+  }
+  return out;
+}
+
 /** Find the range (index, length) of the first link with the given URL in the editor content. */
 function getLinkRange(quill: any, url: string): { index: number; length: number } | null {
   if (!quill || typeof quill.getContents !== "function") return null;
@@ -254,7 +309,11 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
   const hidePreviewTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const linkRangeRef = useRef<{ index: number; length: number; text: string } | null>(null);
   const isRunningSlashCommandRef = useRef(false);
+  /** When set by slash command, image handler should insert at this index (used after async file picker). */
+  const pendingSlashInsertIndexRef = useRef<number | null>(null);
   const lastEnterKeydownAtRef = useRef(0);
+  /** After initial paste we never re-inject HTML (would break custom blots). */
+  const initialLoadRef = useRef(false);
 
   const [hoveredLink, setHoveredLink] = useState<{
     url: string;
@@ -289,14 +348,28 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     return false;
   }, []);
 
-  // Try to capture Quill instance when onChange fires
+  // Semi-uncontrolled: push content to parent as-is. Do not normalize at runtime — that can
+  // create mismatch with Quill's internal Delta and break custom blots. Normalize only on initial load.
   const handleEditorChange = useCallback(
-    (content: string, _delta?: any, source?: string) => {
-      const normalizedContent =
-        typeof content === "string" ? normalizeOrphanCollapsibleHtml(content) : content;
+    (content: string, _delta?: any, source?: string, editor?: { getSemanticHTML?: () => string; getHTML?: () => string }) => {
       if (source === "api" || source === "silent") return;
-      if (normalizedContent === value) return;
-      onChange(normalizedContent);
+      const contentToEmit =
+        editor && typeof editor.getSemanticHTML === "function"
+          ? editor.getSemanticHTML()
+          : editor && typeof editor.getHTML === "function"
+            ? editor.getHTML()
+            : (() => {
+                const q = quillEditorRef.current;
+                if (q && typeof content === "string") {
+                  return typeof (q as any).getSemanticHTML === "function"
+                    ? (q as any).getSemanticHTML()
+                    : q.root?.innerHTML ?? content;
+                }
+                return content;
+              })();
+      if (contentToEmit === value) return;
+      initialLoadRef.current = true;
+      onChange(typeof contentToEmit === "string" ? contentToEmit : content);
       captureQuillInstance();
     },
     [onChange, captureQuillInstance, value]
@@ -330,6 +403,21 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
   }, []);
 
   const normalizedValue = typeof value === "string" ? normalizeOrphanCollapsibleHtml(value) : value;
+
+  // Initial load only: paste HTML once when editor is ready. Never re-inject after that —
+  // clipboard.dangerouslyPasteHTML() parses HTML to Delta and does not preserve custom container blots.
+  useEffect(() => {
+    if (!quillReady) return;
+    const quill = quillEditorRef.current;
+    if (!quill?.clipboard?.dangerouslyPasteHTML) return;
+    if (initialLoadRef.current) return;
+    const normalized =
+      typeof value === "string" ? normalizeOrphanCollapsibleHtml(value) : value;
+    if (typeof normalized === "string") {
+      quill.clipboard.dangerouslyPasteHTML(normalized);
+    }
+    initialLoadRef.current = true;
+  }, [quillReady]);
 
   // Setup Quill editor instance - poll until we capture (Quill loads async)
   useEffect(() => {
@@ -978,9 +1066,13 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
               typeof quill.insertEmbed === "function"
             ) {
               try {
+                const pendingIndex = pendingSlashInsertIndexRef.current;
                 const selection = quill.getSelection(true);
                 const index =
-                  selection?.index ?? Math.max(0, quill.getLength() - 1);
+                  pendingIndex != null
+                    ? pendingIndex
+                    : selection?.index ?? Math.max(0, quill.getLength() - 1);
+                if (pendingIndex != null) pendingSlashInsertIndexRef.current = null;
                 quill.insertEmbed(index, "image", dataUrl, "user");
                 quill.setSelection(index + 1);
                 const contentAfterInsert = quill.root.innerHTML;
@@ -1128,6 +1220,18 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
         if (textLength <= 0) return;
         quill.deleteText(lineStartIndex, textLength, "user");
 
+        let insertIndex = lineStartIndex;
+        if (!isInsideCollapsible(quill, insertIndex)) {
+          insertIndex = normalizeOutsideContainer(quill, insertIndex);
+        }
+        quill.setSelection(insertIndex, 0, "silent");
+
+        if (command.key === "image") {
+          pendingSlashInsertIndexRef.current = insertIndex;
+        } else {
+          pendingSlashInsertIndexRef.current = null;
+        }
+
         let shouldFocusAfterCommand = true;
         switch (command.key) {
         case "image":
@@ -1139,7 +1243,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
         }
         case "collapsible": {
           try {
-            insertCollapsibleAt(quill, lineStartIndex);
+            insertCollapsibleAt(quill, insertIndex);
             shouldFocusAfterCommand = false;
           } catch {
             // ignore
@@ -1487,7 +1591,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
         <div ref={quillRef} data-testid={testId}>
           <ReactQuill
             theme="snow"
-            value={normalizedValue}
+            defaultValue={normalizedValue}
             onChange={handleEditorChange}
             onChangeSelection={handleChangeSelection}
             onFocus={handleFocus}
