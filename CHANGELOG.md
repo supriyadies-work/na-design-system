@@ -5,9 +5,26 @@ All notable changes to na-design-system will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.3.4] - 2026-02-24
+
+## [1.3.5] - 2026-02-25
 
 ### RichTextEditor
+
+#### Fixed
+
+- **Link inside collapsible not saved** – Saat konten di-save (Publish), HTML sekarang selalu diambil dari `quill.root.innerHTML` (DOM asli) sehingga link dan format inline lain di dalam custom blots (mis. `.ql-collapsible-content`) tetap tersimpan. Sebelumnya getHTML/getSemanticHTML bisa menghilangkan link di dalam collapsible.
+- **Link / collapsible structure after publish** – Normalisasi `normalizeCollapsibleTrailingLink`: bila blok berisi link ter-serial di luar `.ql-collapsible` (sibling), blok tersebut dipindahkan ke dalam `.ql-collapsible-content` sebelum konten di-emit ke parent. Diterapkan di semua jalur yang memanggil `onChange` (handleEditorChange, toggle collapsible, insert image).
+---
+
+## [1.3.4] - 2026-02-24
+
+
+### RichTextEditor
+
+#### Changed
+
+- **Collapsible as container blot** – Collapsible sekarang satu **container blot** (`div.ql-collapsible`) dengan header dan content sebagai anak. Semua konten (teks, image, embed) masuk ke `.ql-collapsible-content`. Toggle pakai `data-open` pada container + CSS; tidak ada lagi scan sibling atau class body. Image/embed yang di-insert saat kursor di dalam collapsible otomatis masuk ke content. Backspace di header kosong menghapus seluruh blok collapsible. Struktur: `div.ql-collapsible` > `div.ql-collapsible-header` + `div.ql-collapsible-content`.
+
 
 #### Added
 
