@@ -53,6 +53,38 @@ function normalizeOrphanCollapsibleHtml(input: string): string {
 }
 
 /**
+ * Fix HTML where a link block was serialized outside .ql-collapsible (Quill/Delta
+ * can emit it as next sibling). Move any immediate next sibling of .ql-collapsible
+ * that is a single block containing a link into that collapsible's content area.
+ */
+function normalizeCollapsibleTrailingLink(input: string): string {
+  if (typeof document === "undefined" || !input?.includes("ql-collapsible")) return input;
+  try {
+    const root = document.createElement("div");
+    root.innerHTML = input;
+    let changed = false;
+    const containers = root.querySelectorAll(".ql-collapsible");
+    containers.forEach((container) => {
+      if (!(container instanceof HTMLElement)) return;
+      const contentDiv = container.querySelector(".ql-collapsible-content");
+      if (!contentDiv) return;
+      while (container.nextElementSibling) {
+        const sibling = container.nextElementSibling;
+        if (!(sibling instanceof HTMLElement)) break;
+        if (sibling.classList.contains("ql-collapsible")) break;
+        if (sibling.tagName !== "P" && sibling.tagName !== "DIV") break;
+        if (!sibling.querySelector("a")) break;
+        contentDiv.appendChild(sibling);
+        changed = true;
+      }
+    });
+    return changed ? root.innerHTML : input;
+  } catch {
+    return input;
+  }
+}
+
+/**
  * Insert collapsible at index via scroll API so the wrapper blot (collapsible)
  * exists. Delta insertion only creates header/content blocks, no container.
  * Do not call onChange — let Quill text-change trigger handleEditorChange.
@@ -351,25 +383,20 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
   // Semi-uncontrolled: push content to parent as-is. Do not normalize at runtime — that can
   // create mismatch with Quill's internal Delta and break custom blots. Normalize only on initial load.
   const handleEditorChange = useCallback(
-    (content: string, _delta?: any, source?: string, editor?: { getSemanticHTML?: () => string; getHTML?: () => string }) => {
+    (content: string, _delta?: any, source?: string, _editor?: unknown) => {
       if (source === "api" || source === "silent") return;
+      // Always use root.innerHTML so links and other inline formats inside custom blots
+      // (e.g. .ql-collapsible-content) are preserved. getHTML/getSemanticHTML can drop them.
+      const q = quillEditorRef.current;
       const contentToEmit =
-        editor && typeof editor.getSemanticHTML === "function"
-          ? editor.getSemanticHTML()
-          : editor && typeof editor.getHTML === "function"
-            ? editor.getHTML()
-            : (() => {
-                const q = quillEditorRef.current;
-                if (q && typeof content === "string") {
-                  return typeof (q as any).getSemanticHTML === "function"
-                    ? (q as any).getSemanticHTML()
-                    : q.root?.innerHTML ?? content;
-                }
-                return content;
-              })();
+        q?.root != null ? q.root.innerHTML : typeof content === "string" ? content : "";
       if (contentToEmit === value) return;
       initialLoadRef.current = true;
-      onChange(typeof contentToEmit === "string" ? contentToEmit : content);
+      const html =
+        typeof contentToEmit === "string" ? contentToEmit : content;
+      const normalizedHtml =
+        typeof html === "string" ? normalizeCollapsibleTrailingLink(html) : html;
+      onChange(typeof normalizedHtml === "string" ? normalizedHtml : html);
       captureQuillInstance();
     },
     [onChange, captureQuillInstance, value]
@@ -591,7 +618,8 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
           containerNode = wrapper;
           content = contentNode;
           const q = quillEditorRef.current;
-          if (q?.root) onChange(q.root.innerHTML);
+          if (q?.root)
+            onChange(normalizeCollapsibleTrailingLink(q.root.innerHTML));
         }
       }
       if (!content) return;
@@ -599,7 +627,8 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
       containerNode.setAttribute("data-open", String(!open));
 
       const q = quillEditorRef.current;
-      if (q?.root) onChange(q.root.innerHTML);
+      if (q?.root)
+        onChange(normalizeCollapsibleTrailingLink(q.root.innerHTML));
     };
 
     editor.addEventListener("click", onClick);
@@ -1076,7 +1105,10 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
                 quill.insertEmbed(index, "image", dataUrl, "user");
                 quill.setSelection(index + 1);
                 const contentAfterInsert = quill.root.innerHTML;
-                if (contentAfterInsert !== value) onChange(contentAfterInsert);
+                if (contentAfterInsert !== value)
+                  onChange(
+                    normalizeCollapsibleTrailingLink(contentAfterInsert)
+                  );
                 setTimeout(() => {
                   const imgElements = quill.root.querySelectorAll(
                     `img[src="${dataUrl}"]`
@@ -1120,7 +1152,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
                 setTimeout(() => {
                   const content = quill.root.innerHTML;
                   if (content !== value) {
-                    onChange(content);
+                    onChange(normalizeCollapsibleTrailingLink(content));
                   }
                 }, 100);
 
@@ -1168,7 +1200,9 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
               setTimeout(() => {
                 const updatedContent = editorElement.innerHTML;
                 if (updatedContent !== value) {
-                  onChange(updatedContent);
+                  onChange(
+                    normalizeCollapsibleTrailingLink(updatedContent)
+                  );
                 }
               }, 100);
             }
