@@ -212,31 +212,44 @@ const ReactQuill = dynamic(
     const Quill = mod.Quill as typeof import("quill").default;
     QuillClass = Quill;
 
-    // Quill.import() can be undefined in some builds/bundles (e.g. dist consumed by na-portal)
+    // Use only the same Quill instance (from react-quill-new) so custom blots are registered
+    // on the same Quill that creates the editor. Avoid import("quill/blots/...") — it can
+    // resolve to a different quill package in the consuming app and cause "Cannot register"
+    // errors in production.
+    const unwrap = (m: any) => (m?.default !== undefined ? m.default : m);
     let Block: any;
     let Container: any;
     let Break: any;
     try {
-      const blockMod = Quill.import?.("blots/block") as any;
-      const containerVal = Quill.import?.("blots/container");
-      const breakVal = Quill.import?.("blots/break");
-      if (blockMod?.default && containerVal && breakVal) {
-        Block = blockMod.default;
-        Container = containerVal;
-        Break = breakVal;
+      if (typeof Quill.import === "function") {
+        const blockMod = Quill.import("blots/block") as any;
+        const containerVal = Quill.import("blots/container") as any;
+        const breakVal = Quill.import("blots/break") as any;
+        if (blockMod && containerVal && breakVal) {
+          Block = unwrap(blockMod);
+          Container = unwrap(containerVal);
+          Break = unwrap(breakVal);
+        }
+      }
+      if ((!Block || !Container || !Break) && Quill.imports && typeof Quill.imports === "object") {
+        const b = (Quill.imports as any)["blots/block"];
+        const c = (Quill.imports as any)["blots/container"];
+        const br = (Quill.imports as any)["blots/break"];
+        if (b && c && br) {
+          Block = unwrap(b);
+          Container = unwrap(c);
+          Break = unwrap(br);
+        }
       }
     } catch {
       /* ignore */
     }
     if (!Block || !Container || !Break) {
-      const [blockMod, containerMod, breakMod] = await Promise.all([
-        import("quill/blots/block"),
-        import("quill/blots/container"),
-        import("quill/blots/break"),
-      ]);
-      Block = (blockMod as any).default;
-      Container = (containerMod as any).default;
-      Break = (breakMod as any).default;
+      throw new Error(
+        "[RichTextEditor] Could not get Block/Container/Break from Quill (Quill.import or Quill.imports). " +
+          "Ensure react-quill-new is installed and exposes the full Quill API. " +
+          "Do not use a separate 'quill' package to avoid duplicate Quill instances."
+      );
     }
 
     // -------------------------------------------------------------------------
