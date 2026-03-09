@@ -398,8 +398,9 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
   const handleEditorChange = useCallback(
     (content: string, _delta?: any, source?: string, _editor?: unknown) => {
       if (source === "api" || source === "silent") return;
-      // Always use root.innerHTML so links and other inline formats inside custom blots
-      // (e.g. .ql-collapsible-content) are preserved. getHTML/getSemanticHTML can drop them.
+      // Capture Quill first so we can read root.innerHTML; the string ReactQuill passes
+      // can drop links/formatting inside custom blots (e.g. .ql-collapsible-content).
+      captureQuillInstance();
       const q = quillEditorRef.current;
       const contentToEmit =
         q?.root != null ? q.root.innerHTML : typeof content === "string" ? content : "";
@@ -410,7 +411,6 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
       const normalizedHtml =
         typeof html === "string" ? normalizeCollapsibleTrailingLink(html) : html;
       onChange(typeof normalizedHtml === "string" ? normalizedHtml : html);
-      captureQuillInstance();
     },
     [onChange, captureQuillInstance, value]
   );
@@ -424,6 +424,19 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
   const handleFocus = useCallback(() => {
     captureQuillInstance();
   }, [captureQuillInstance]);
+
+  // Flush current editor HTML on blur so parent state is up to date (e.g. before Publish).
+  // Ensures links and other content inside custom blots (e.g. .ql-collapsible-content) are saved.
+  const handleBlur = useCallback(() => {
+    if (!captureQuillInstance()) return;
+    const q = quillEditorRef.current;
+    if (!q?.root) return;
+    const raw = q.root.innerHTML;
+    if (raw === value) return;
+    const normalized =
+      typeof raw === "string" ? normalizeCollapsibleTrailingLink(raw) : raw;
+    onChange(typeof normalized === "string" ? normalized : raw);
+  }, [captureQuillInstance, onChange, value]);
 
   // Update blogSlug ref when it changes
   useEffect(() => {
@@ -1642,6 +1655,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
             onChange={handleEditorChange}
             onChangeSelection={handleChangeSelection}
             onFocus={handleFocus}
+            onBlur={handleBlur}
             modules={modules}
             formats={formats}
             placeholder={placeholder}
