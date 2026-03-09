@@ -214,6 +214,56 @@ export const iconPaths = {
       />
     </>
   ),
+  chevronDown: (
+    <>
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M19 9l-7 7-7-7"
+      />
+    </>
+  ),
+  collapsible: (
+    <>
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M4 6h16M4 12h10m0 0v0m0-6v0M19 14l-7 7-7-7"
+      />
+    </>
+  ),
+  listBullet: (
+    <>
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M4 6h16M4 12h16M4 18h16"
+      />
+    </>
+  ),
+  listNumber: (
+    <>
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M4 6h16M4 12h16M4 18h16"
+      />
+    </>
+  ),
+  formatQuote: (
+    <>
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M8 10h8m-8 4h4m3-7v10l-4-4H6a2 2 0 01-2-2V6a2 2 0 012-2h3l4 4z"
+      />
+    </>
+  ),
 };
 
 export type IconName = keyof typeof iconPaths;

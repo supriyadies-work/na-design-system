@@ -10,16 +10,285 @@ import React, {
 import dynamic from "next/dynamic";
 import { useTheme } from "next-themes";
 import type { PendingImage } from "@/lib/helpers/pendingImageUpload";
+import type { IconName } from "@/components/atoms/Icon";
+import { Icon } from "@/components/atoms/Icon";
+import LinkEditorModal from "@/components/molecules/Modal/LinkEditorModal";
+
+
 import "react-quill-new/dist/quill.snow.css";
+import Delta from "quill-delta";
 
 // Store Quill from react-quill-new when it loads (Quill 2 doesn't use __quill on DOM)
 let QuillClass: { find: (el: HTMLElement) => any } | null = null;
+
+function normalizeOrphanCollapsibleHtml(input: string): string {
+  if (!input.includes("ql-collapsible-header")) return input;
+  const root = document.createElement("div");
+  root.innerHTML = input;
+  let changed = false;
+
+  const directChildren = Array.from(root.children);
+  for (const child of directChildren) {
+    if (!(child instanceof HTMLElement)) continue;
+    if (!child.classList.contains("ql-collapsible-header")) continue;
+
+    const wrapper = document.createElement("div");
+    wrapper.className = "ql-collapsible";
+    wrapper.setAttribute("data-open", "true");
+
+    const header = child.cloneNode(true) as HTMLElement;
+    const content = document.createElement("div");
+    content.className = "ql-collapsible-content";
+    const p = document.createElement("p");
+    p.innerHTML = "<br>";
+    content.appendChild(p);
+
+    wrapper.appendChild(header);
+    wrapper.appendChild(content);
+    root.replaceChild(wrapper, child);
+    changed = true;
+  }
+
+  return changed ? root.innerHTML : input;
+}
+
+/**
+ * Fix HTML where a link block was serialized outside .ql-collapsible (Quill/Delta
+ * can emit it as next sibling). Move any immediate next sibling of .ql-collapsible
+ * that is a single block containing a link into that collapsible's content area.
+ */
+function normalizeCollapsibleTrailingLink(input: string): string {
+  if (typeof document === "undefined" || !input?.includes("ql-collapsible")) return input;
+  try {
+    const root = document.createElement("div");
+    root.innerHTML = input;
+    let changed = false;
+    const containers = root.querySelectorAll(".ql-collapsible");
+    containers.forEach((container) => {
+      if (!(container instanceof HTMLElement)) return;
+      const contentDiv = container.querySelector(".ql-collapsible-content");
+      if (!contentDiv) return;
+      while (container.nextElementSibling) {
+        const sibling = container.nextElementSibling;
+        if (!(sibling instanceof HTMLElement)) break;
+        if (sibling.classList.contains("ql-collapsible")) break;
+        if (sibling.tagName !== "P" && sibling.tagName !== "DIV") break;
+        if (!sibling.querySelector("a")) break;
+        contentDiv.appendChild(sibling);
+        changed = true;
+      }
+    });
+    return changed ? root.innerHTML : input;
+  } catch {
+    return input;
+  }
+}
+
+/**
+ * Insert collapsible at index via scroll API so the wrapper blot (collapsible)
+ * exists. Delta insertion only creates header/content blocks, no container.
+ * Do not call onChange — let Quill text-change trigger handleEditorChange.
+ */
+function insertCollapsibleAt(quill: any, index: number): void {
+  try {
+    const scroll = quill.scroll;
+
+    const container = scroll.create("collapsible");
+    const header = scroll.create("collapsible-header");
+    const content = scroll.create("collapsible-content");
+    const block = scroll.create("block");
+
+    block.appendChild(scroll.create("break"));
+    content.appendChild(block);
+
+    header.appendChild(scroll.create("break"));
+
+    container.appendChild(header);
+    container.appendChild(content);
+
+    const [line] = quill.getLine(index);
+    const ref = line ? quill.constructor.find(line.domNode) : null;
+
+    scroll.insertBefore(container, ref);
+
+    quill.update("user");
+
+    requestAnimationFrame(() => {
+      try {
+        const start = container.offset(scroll);
+        quill.setSelection(start, 0, "silent");
+        quill.focus();
+      } catch {
+        // ignore
+      }
+    });
+  } catch {
+    // ignore
+  }
+}
+
+/**
+ * Returns true if the given index is inside a collapsible container (header or content).
+ * Uses getLine(index) and walks up from the line's domNode.
+ */
+function isInsideCollapsible(quill: any, index: number): boolean {
+  try {
+    const [line] = quill.getLine(index);
+    let node = line?.domNode as HTMLElement | null;
+    while (node && node !== quill.root) {
+      if (node.classList?.contains("ql-collapsible")) return true;
+      node = node.parentElement;
+    }
+  } catch {
+    // ignore
+  }
+  return false;
+}
+
+/**
+ * If the given index is inside a collapsible container (Quill often treats the
+ * boundary after the container as still "inside"), return the index right after
+ * that container so the next insert does not corrupt the collapsible.
+ * Uses getLine(index) and walks up from the line's domNode so we detect
+ * containment by block (line), not just leaf.
+ */
+function normalizeOutsideContainer(quill: any, index: number): number {
+  let out = index;
+  let found = false;
+  let offset = -1;
+  let len = -1;
+  try {
+    const [line] = quill.getLine(index);
+    const startNode = line?.domNode as HTMLElement | null;
+    let node = startNode;
+
+    while (node && node !== quill.root) {
+      if (node.classList?.contains("ql-collapsible")) {
+        const blot = quill.constructor?.find?.(node);
+        if (blot) {
+          const scroll = quill.scroll;
+          offset = blot.offset(scroll);
+          len = blot.length();
+          out = offset + len;
+          found = true;
+        }
+        break;
+      }
+      node = node.parentElement;
+    }
+  } catch {
+    // ignore
+  }
+  return out;
+}
+
+/** Find the range (index, length) of the first link with the given URL in the editor content. */
+function getLinkRange(quill: any, url: string): { index: number; length: number } | null {
+  if (!quill || typeof quill.getContents !== "function") return null;
+  const delta = quill.getContents();
+  if (!delta || !Array.isArray(delta.ops)) return null;
+  let index = 0;
+  for (const op of delta.ops) {
+    const len = typeof op.insert === "string" ? op.insert.length : 1;
+    if (op.attributes?.link === url) return { index, length: len };
+    index += len;
+  }
+  return null;
+}
+
+const SLASH_COMMANDS: { key: string; label: string; icon: IconName }[] = [
+  { key: "image", label: "Insert Image", icon: "image" },
+  { key: "link", label: "Create Link", icon: "link" },
+  { key: "collapsible", label: "Collapsible", icon: "collapsible" },
+  { key: "number", label: "Numbered List", icon: "listNumber" },
+  { key: "pullquote", label: "Pull Quote", icon: "formatQuote" },
+  { key: "blockquote", label: "Block Quote", icon: "formatQuote" },
+];
 
 // Dynamic import untuk avoid SSR issues
 const ReactQuill = dynamic(
   async () => {
     const mod = await import("react-quill-new");
-    QuillClass = mod.Quill;
+    const Quill = mod.Quill as typeof import("quill").default;
+    QuillClass = Quill;
+
+    // Use only the same Quill instance (from react-quill-new) so custom blots are registered
+    // on the same Quill that creates the editor. Avoid import("quill/blots/...") — it can
+    // resolve to a different quill package in the consuming app and cause "Cannot register"
+    // errors in production.
+    const unwrap = (m: any) => (m?.default !== undefined ? m.default : m);
+    let Block: any;
+    let Container: any;
+    let Break: any;
+    try {
+      if (typeof Quill.import === "function") {
+        const blockMod = Quill.import("blots/block") as any;
+        const containerVal = Quill.import("blots/container") as any;
+        const breakVal = Quill.import("blots/break") as any;
+        if (blockMod && containerVal && breakVal) {
+          Block = unwrap(blockMod);
+          Container = unwrap(containerVal);
+          Break = unwrap(breakVal);
+        }
+      }
+      if ((!Block || !Container || !Break) && Quill.imports && typeof Quill.imports === "object") {
+        const b = (Quill.imports as any)["blots/block"];
+        const c = (Quill.imports as any)["blots/container"];
+        const br = (Quill.imports as any)["blots/break"];
+        if (b && c && br) {
+          Block = unwrap(b);
+          Container = unwrap(c);
+          Break = unwrap(br);
+        }
+      }
+    } catch {
+      /* ignore */
+    }
+    if (!Block || !Container || !Break) {
+      throw new Error(
+        "[RichTextEditor] Could not get Block/Container/Break from Quill (Quill.import or Quill.imports). " +
+          "Ensure react-quill-new is installed and exposes the full Quill API. " +
+          "Do not use a separate 'quill' package to avoid duplicate Quill instances."
+      );
+    }
+
+    // -------------------------------------------------------------------------
+    // COLLAPSIBLE: Container so content is real Block children — Enter, slash,
+    // selection, and Delta all work inside content. Insert via scroll API, not
+    // insert({ collapsible: true }), because Container is not an Embed.
+    // -------------------------------------------------------------------------
+
+    class CollapsibleHeader extends Block {
+      static blotName = "collapsible-header";
+      static tagName = "DIV";
+      static className = "ql-collapsible-header";
+    }
+
+    class CollapsibleContent extends Container {
+      static blotName = "collapsible-content";
+      static tagName = "DIV";
+      static className = "ql-collapsible-content";
+      static allowedChildren = [Block];
+      static defaultChild = Block;
+    }
+
+    class CollapsibleContainer extends Container {
+      static blotName = "collapsible";
+      static tagName = "DIV";
+      static className = "ql-collapsible";
+      static allowedChildren = [CollapsibleHeader, CollapsibleContent];
+
+      static create(open: boolean = true) {
+        const node = super.create() as HTMLElement;
+        node.setAttribute("data-open", String(open));
+        return node;
+      }
+    }
+
+    Quill.register("blots/collapsible-header", CollapsibleHeader);
+    Quill.register("blots/collapsible-content", CollapsibleContent);
+    Quill.register("blots/collapsible", CollapsibleContainer);
+
     return mod.default;
   },
   {
@@ -42,6 +311,8 @@ interface RichTextEditorProps {
   className?: string;
   onPendingImagesChange?: (images: PendingImage[]) => void; // Callback untuk pending images
   testId?: string;
+  /** When provided, link hover will fetch preview via this callback. If omitted or fetch fails, fallback tooltip (URL only) is shown. */
+  fetchLinkPreview?: (url: string) => Promise<{ title: string | null }>;
 }
 
 const RichTextEditor: React.FC<RichTextEditorProps> = ({
@@ -52,6 +323,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
   className = "",
   onPendingImagesChange,
   testId,
+  fetchLinkPreview,
 }) => {
   const { theme } = useTheme();
   const [mounted, setMounted] = useState(false);
@@ -63,8 +335,41 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
   const [tooltipPosition, setTooltipPosition] = useState({ top: 0, left: 0 });
   const [quillReady, setQuillReady] = useState(false);
   const tooltipRef = useRef<HTMLDivElement>(null);
+  const slashMenuRef = useRef<HTMLDivElement>(null);
   const isScrollingRef = useRef(false);
   const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const [showSlashMenu, setShowSlashMenu] = useState(false);
+  const [slashQuery, setSlashQuery] = useState("");
+  const [slashPosition, setSlashPosition] = useState({ top: 0, left: 0 });
+  const [isLinkModalOpen, setIsLinkModalOpen] = useState(false);
+  const [linkDefaults, setLinkDefaults] = useState<{ text: string; url: string }>({
+    text: "",
+    url: "",
+  });
+  const linkSelectionRef = useRef<any>(null);
+  const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const fetchTargetUrlRef = useRef<string | null>(null);
+  const previewCacheRef = useRef<Map<string, { title: string | null }>>(new Map());
+  const hidePreviewTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const linkRangeRef = useRef<{ index: number; length: number; text: string } | null>(null);
+  const isRunningSlashCommandRef = useRef(false);
+  /** When set by slash command, image handler should insert at this index (used after async file picker). */
+  const pendingSlashInsertIndexRef = useRef<number | null>(null);
+  const lastEnterKeydownAtRef = useRef(0);
+  /** After initial paste we never re-inject HTML (would break custom blots). */
+  const initialLoadRef = useRef(false);
+
+  const [hoveredLink, setHoveredLink] = useState<{
+    url: string;
+    top: number;
+    left: number;
+  } | null>(null);
+
+  const [linkPreviewData, setLinkPreviewData] = useState<{
+    title?: string | null;
+    loading: boolean;
+  }>({ loading: false });
 
   // Helper to capture Quill instance from DOM (Quill 2 uses Quill.find(), not __quill)
   const captureQuillInstance = useCallback(() => {
@@ -88,13 +393,26 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     return false;
   }, []);
 
-  // Try to capture Quill instance when onChange fires
+  // Semi-uncontrolled: push content to parent as-is. Do not normalize at runtime — that can
+  // create mismatch with Quill's internal Delta and break custom blots. Normalize only on initial load.
   const handleEditorChange = useCallback(
-    (content: string) => {
-      onChange(content);
+    (content: string, _delta?: any, source?: string, _editor?: unknown) => {
+      if (source === "api" || source === "silent") return;
+      // Capture Quill first so we can read root.innerHTML; the string ReactQuill passes
+      // can drop links/formatting inside custom blots (e.g. .ql-collapsible-content).
       captureQuillInstance();
+      const q = quillEditorRef.current;
+      const contentToEmit =
+        q?.root != null ? q.root.innerHTML : typeof content === "string" ? content : "";
+      if (contentToEmit === value) return;
+      initialLoadRef.current = true;
+      const html =
+        typeof contentToEmit === "string" ? contentToEmit : content;
+      const normalizedHtml =
+        typeof html === "string" ? normalizeCollapsibleTrailingLink(html) : html;
+      onChange(typeof normalizedHtml === "string" ? normalizedHtml : html);
     },
-    [onChange, captureQuillInstance]
+    [onChange, captureQuillInstance, value]
   );
 
   // Callback for selection change to trigger Quill instance capture
@@ -106,6 +424,19 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
   const handleFocus = useCallback(() => {
     captureQuillInstance();
   }, [captureQuillInstance]);
+
+  // Flush current editor HTML on blur so parent state is up to date (e.g. before Publish).
+  // Ensures links and other content inside custom blots (e.g. .ql-collapsible-content) are saved.
+  const handleBlur = useCallback(() => {
+    if (!captureQuillInstance()) return;
+    const q = quillEditorRef.current;
+    if (!q?.root) return;
+    const raw = q.root.innerHTML;
+    if (raw === value) return;
+    const normalized =
+      typeof raw === "string" ? normalizeCollapsibleTrailingLink(raw) : raw;
+    onChange(typeof normalized === "string" ? normalized : raw);
+  }, [captureQuillInstance, onChange, value]);
 
   // Update blogSlug ref when it changes
   useEffect(() => {
@@ -123,6 +454,23 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  const normalizedValue = typeof value === "string" ? normalizeOrphanCollapsibleHtml(value) : value;
+
+  // Initial load only: paste HTML once when editor is ready. Never re-inject after that —
+  // clipboard.dangerouslyPasteHTML() parses HTML to Delta and does not preserve custom container blots.
+  useEffect(() => {
+    if (!quillReady) return;
+    const quill = quillEditorRef.current;
+    if (!quill?.clipboard?.dangerouslyPasteHTML) return;
+    if (initialLoadRef.current) return;
+    const normalized =
+      typeof value === "string" ? normalizeOrphanCollapsibleHtml(value) : value;
+    if (typeof normalized === "string") {
+      quill.clipboard.dangerouslyPasteHTML(normalized);
+    }
+    initialLoadRef.current = true;
+  }, [quillReady]);
 
   // Setup Quill editor instance - poll until we capture (Quill loads async)
   useEffect(() => {
@@ -264,6 +612,130 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     };
   }, [mounted, quillReady]);
 
+  // Collapsible toggle: use click bubbling so Quill keeps selection/focus flow
+  useEffect(() => {
+    if (!mounted || !quillReady || !quillEditorRef.current) return;
+
+    const editor = quillEditorRef.current.root as HTMLElement;
+
+    const onClick = (e: MouseEvent) => {
+      const header = (e.target as HTMLElement)?.closest(".ql-collapsible-header");
+      if (!header) return;
+
+      const container = header.parentElement;
+      if (!container) return;
+      let containerNode = container;
+      let content = containerNode.querySelector(".ql-collapsible-content") as HTMLElement | null;
+      if (!content && containerNode.classList.contains("ql-editor")) {
+        // Repair orphan header in-place on user interaction.
+        const wrapper = document.createElement("div");
+        wrapper.className = "ql-collapsible";
+        wrapper.setAttribute("data-open", "true");
+        const contentNode = document.createElement("div");
+        contentNode.className = "ql-collapsible-content";
+        const p = document.createElement("p");
+        p.innerHTML = "<br>";
+        contentNode.appendChild(p);
+        const parent = header.parentElement;
+        if (parent) {
+          parent.replaceChild(wrapper, header);
+          wrapper.appendChild(header);
+          wrapper.appendChild(contentNode);
+          containerNode = wrapper;
+          content = contentNode;
+          const q = quillEditorRef.current;
+          if (q?.root)
+            onChange(normalizeCollapsibleTrailingLink(q.root.innerHTML));
+        }
+      }
+      if (!content) return;
+      const open = containerNode.getAttribute("data-open") === "true";
+      containerNode.setAttribute("data-open", String(!open));
+
+      const q = quillEditorRef.current;
+      if (q?.root)
+        onChange(normalizeCollapsibleTrailingLink(q.root.innerHTML));
+    };
+
+    editor.addEventListener("click", onClick);
+    return () => editor.removeEventListener("click", onClick);
+  }, [mounted, quillReady, onChange]);
+
+  useEffect(() => {
+    if (!mounted || !quillReady || !quillEditorRef.current) return;
+    const quill = quillEditorRef.current;
+    const editor = quill.root as HTMLElement;
+    const onKeyDownCapture = (e: KeyboardEvent) => {
+      if (e.key !== "Enter") return;
+      lastEnterKeydownAtRef.current = Date.now();
+    };
+    const onTextChange = () => {
+      // no-op; used only to pair with Enter keydown for timing
+    };
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== "Enter") return;
+      const target = e.target as HTMLElement;
+      const header = target?.closest?.(".ql-collapsible-header");
+      if (!header) return;
+      e.preventDefault();
+      const container = header.parentElement;
+      if (!container) return;
+      try {
+        const blot = quill.constructor?.find?.(container);
+        if (blot?.children?.length) {
+          const headerBlot = blot.children.head;
+          const contentStart =
+            blot.offset(quill.scroll) + (headerBlot?.length() ?? 0);
+          quill.setSelection(contentStart, 0, "silent");
+          quill.focus();
+          return;
+        }
+      } catch {
+        // fallback
+      }
+      const contentEl = container.querySelector(".ql-collapsible-content") as HTMLElement | null;
+      if (contentEl) contentEl.focus();
+      else quill.focus();
+    };
+    editor.addEventListener("keydown", onKeyDownCapture, true);
+    editor.addEventListener("keydown", onKeyDown);
+    quill.on("text-change", onTextChange);
+    return () => {
+      editor.removeEventListener("keydown", onKeyDownCapture, true);
+      editor.removeEventListener("keydown", onKeyDown);
+      quill.off("text-change", onTextChange);
+    };
+  }, [mounted, quillReady]);
+
+  // Slash command: update query when user types after "/" (only while menu is open)
+  useEffect(() => {
+    if (!showSlashMenu || !quillEditorRef.current) return;
+
+    const quill = quillEditorRef.current;
+
+    const updateQuery = () => {
+      const range = quill.getSelection(true);
+      if (!range) return;
+
+      try {
+        const [line, _offset] = quill.getLine(range.index);
+        if (!line?.domNode) return;
+
+        const text = (line.domNode as HTMLElement).textContent ?? "";
+        if (!text.startsWith("/")) {
+          setShowSlashMenu(false);
+          return;
+        }
+        setSlashQuery(text.slice(1));
+      } catch {
+        setShowSlashMenu(false);
+      }
+    };
+
+    quill.on("text-change", updateQuery);
+    return () => quill.off("text-change", updateQuery);
+  }, [showSlashMenu]);
+
   // Hide tooltip when clicking outside
   useEffect(() => {
     if (!showTooltip) return;
@@ -302,26 +774,184 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     };
   }, [showTooltip]);
 
+  // Close slash menu on Escape or click outside
+  useEffect(() => {
+    if (!showSlashMenu) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setShowSlashMenu(false);
+    };
+    const handleClickOutsideSlash = (e: MouseEvent) => {
+      const target = e.target as Node;
+      if (
+        slashMenuRef.current &&
+        !slashMenuRef.current.contains(target) &&
+        quillRef.current &&
+        !quillRef.current.contains(target)
+      ) {
+        setShowSlashMenu(false);
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    document.addEventListener("mousedown", handleClickOutsideSlash);
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+      document.removeEventListener("mousedown", handleClickOutsideSlash);
+    };
+  }, [showSlashMenu]);
+
+  const clearPreview = useCallback(() => {
+    if (hidePreviewTimeoutRef.current) {
+      clearTimeout(hidePreviewTimeoutRef.current);
+      hidePreviewTimeoutRef.current = null;
+    }
+    linkRangeRef.current = null;
+    fetchTargetUrlRef.current = null;
+    setHoveredLink(null);
+    setLinkPreviewData({ loading: false });
+  }, []);
+
+  const cancelHidePreview = useCallback(() => {
+    if (hidePreviewTimeoutRef.current) {
+      clearTimeout(hidePreviewTimeoutRef.current);
+      hidePreviewTimeoutRef.current = null;
+    }
+  }, []);
+
+  useEffect(() => {
+  if (!mounted || !quillReady || !quillEditorRef.current) return;
+
+  const editor = quillEditorRef.current.root as HTMLElement;
+
+  const handleMouseOver = (e: MouseEvent) => {
+    const target = e.target as HTMLElement;
+    const link = target.closest("a");
+
+    if (!link) return;
+
+    const rect = link.getBoundingClientRect();
+    const url = link.getAttribute("href") || "";
+
+    hoverTimeoutRef.current = setTimeout(() => {
+      cancelHidePreview();
+      const quill = quillEditorRef.current;
+      const range = quill ? getLinkRange(quill, url) : null;
+      const text = link ? (link.textContent || "").trim() : "";
+      linkRangeRef.current =
+        range ? { index: range.index, length: range.length, text } : null;
+      setHoveredLink({
+        url,
+        top: rect.bottom + 8,
+        left: rect.left + rect.width / 2,
+      });
+
+      if (fetchLinkPreview) {
+        const cached = previewCacheRef.current.get(url);
+        if (cached !== undefined) {
+          setLinkPreviewData({ title: cached.title, loading: false });
+        } else {
+          setLinkPreviewData({ loading: true });
+          fetchTargetUrlRef.current = url;
+          fetchLinkPreview(url)
+            .then((data) => {
+              const title =
+                typeof data?.title === "string"
+                  ? data.title
+                  : (data as any)?.data?.title ?? null;
+              const result = { title: title ?? null };
+              if (fetchTargetUrlRef.current === url) {
+                previewCacheRef.current.set(url, result);
+                setLinkPreviewData({
+                  ...result,
+                  loading: false,
+                });
+              }
+            })
+            .catch(() => {
+              if (fetchTargetUrlRef.current === url) {
+                setLinkPreviewData({ loading: false });
+              }
+            });
+        }
+      }
+    }, 150);
+  };
+
+  const handleMouseOut = () => {
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
+      hoverTimeoutRef.current = null;
+    }
+    cancelHidePreview();
+    hidePreviewTimeoutRef.current = setTimeout(clearPreview, 200);
+  };
+
+  editor.addEventListener("mouseover", handleMouseOver);
+  editor.addEventListener("mouseout", handleMouseOut);
+
+  return () => {
+    editor.removeEventListener("mouseover", handleMouseOver);
+    editor.removeEventListener("mouseout", handleMouseOut);
+    cancelHidePreview();
+    if (hidePreviewTimeoutRef.current) {
+      clearTimeout(hidePreviewTimeoutRef.current);
+    }
+  };
+}, [mounted, quillReady, fetchLinkPreview, clearPreview, cancelHidePreview]);
+
+  const applyLink = useCallback(
+    ({ text, url }: { text: string; url: string }) => {
+      const quill = quillEditorRef.current;
+      if (!quill) return;
+  
+      let finalUrl = url.trim();
+      if (!/^https?:\/\//i.test(finalUrl)) {
+        finalUrl = "https://" + finalUrl;
+      }
+  
+      try {
+        const parsed = new URL(finalUrl);
+        if (!["http:", "https:"].includes(parsed.protocol)) {
+          return;
+        }
+      } catch {
+        return;
+      }
+  
+      const selection = linkSelectionRef.current;
+  
+      const displayText = text || finalUrl;
+  
+      if (selection && selection.length > 0) {
+        quill.deleteText(selection.index, selection.length);
+        quill.insertText(selection.index, displayText, { link: finalUrl });
+        quill.setSelection(selection.index + displayText.length);
+      } else {
+        const index = selection?.index ?? quill.getLength();
+        quill.insertText(index, displayText, { link: finalUrl });
+        quill.setSelection(index + displayText.length);
+      }
+    },
+    []
+  );
+
   // Quick action handlers
   const handleLink = useCallback(() => {
     const quill = quillEditorRef.current;
     if (!quill) return;
-
+  
     const selection = quill.getSelection(true);
-    if (!selection || selection.length === 0) return;
-
-    const url = prompt("Enter URL:");
-    if (!url) return;
-
-    quill.format("link", url);
-
-    // Close dropdowns
-    const alignMenu = document.getElementById("align-menu");
-    const fontMenu = document.getElementById("font-menu");
-    if (alignMenu) alignMenu.style.display = "none";
-    if (fontMenu) fontMenu.style.display = "none";
-
-    setShowTooltip(false);
+    linkSelectionRef.current = selection;
+  
+    if (selection && selection.length > 0) {
+      const selectedText = quill.getText(selection.index, selection.length);
+      setLinkDefaults({ text: selectedText, url: "" });
+    } else {
+      setLinkDefaults({ text: "", url: "" });
+    }
+  
+    setIsLinkModalOpen(true);
   }, []);
 
   const handleAlign = useCallback((align: string) => {
@@ -491,20 +1121,20 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
               typeof quill.insertEmbed === "function"
             ) {
               try {
+                const pendingIndex = pendingSlashInsertIndexRef.current;
                 const selection = quill.getSelection(true);
-                let index = 0;
-
-                if (selection && selection.index !== null) {
-                  index = selection.index;
-                } else {
-                  const length = quill.getLength();
-                  index = Math.max(0, length - 1);
-                }
-
-                // Use insertEmbed - Quill's native method for images
+                const index =
+                  pendingIndex != null
+                    ? pendingIndex
+                    : selection?.index ?? Math.max(0, quill.getLength() - 1);
+                if (pendingIndex != null) pendingSlashInsertIndexRef.current = null;
                 quill.insertEmbed(index, "image", dataUrl, "user");
-
-                // Set data attribute after insertion
+                quill.setSelection(index + 1);
+                const contentAfterInsert = quill.root.innerHTML;
+                if (contentAfterInsert !== value)
+                  onChange(
+                    normalizeCollapsibleTrailingLink(contentAfterInsert)
+                  );
                 setTimeout(() => {
                   const imgElements = quill.root.querySelectorAll(
                     `img[src="${dataUrl}"]`
@@ -512,23 +1142,11 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
                   if (imgElements.length > 0) {
                     const imgEl = imgElements[0] as HTMLImageElement;
                     imgEl.setAttribute("data-pending-id", imageId);
-                    // Ensure image is visible
                     imgEl.style.maxWidth = "100%";
                     imgEl.style.height = "auto";
                     imgEl.style.display = "block";
                   }
                 }, 50);
-
-                quill.setSelection(index + 1);
-
-                // Update content immediately
-                setTimeout(() => {
-                  const content = quill.root.innerHTML;
-                  if (content !== value) {
-                    onChange(content);
-                  }
-                }, 100);
-
                 inserted = true;
               } catch (error) {
                 console.warn("Quill insertEmbed failed:", error);
@@ -560,7 +1178,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
                 setTimeout(() => {
                   const content = quill.root.innerHTML;
                   if (content !== value) {
-                    onChange(content);
+                    onChange(normalizeCollapsibleTrailingLink(content));
                   }
                 }, 100);
 
@@ -608,7 +1226,9 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
               setTimeout(() => {
                 const updatedContent = editorElement.innerHTML;
                 if (updatedContent !== value) {
-                  onChange(updatedContent);
+                  onChange(
+                    normalizeCollapsibleTrailingLink(updatedContent)
+                  );
                 }
               }, 100);
             }
@@ -627,6 +1247,107 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [] // Empty dependency array - function never changes
+  );
+
+  // Execute slash command: remove "/command" text then run Quill action
+  const handleSlashCommand = useCallback(
+    (command: { key: string; label: string }) => {
+      if (isRunningSlashCommandRef.current) return;
+      isRunningSlashCommandRef.current = true;
+      try {
+        const quill = quillEditorRef.current;
+        if (!quill) return;
+
+        const range = quill.getSelection(true);
+        if (!range) return;
+
+        let lineStartIndex = 0;
+        let textLength = 0;
+        try {
+          const [line, offset] = quill.getLine(range.index);
+          if (line != null && typeof offset === "number") {
+            lineStartIndex = range.index - offset;
+            textLength = offset;
+          }
+        } catch {
+          const textBeforeCursor = quill.getText(0, range.index);
+          const lineStartInText = textBeforeCursor.lastIndexOf("\n") + 1;
+          const lineText = textBeforeCursor.slice(lineStartInText);
+          if (!lineText.startsWith("/")) return;
+          lineStartIndex = range.index - lineText.length;
+          textLength = lineText.length;
+        }
+        if (textLength <= 0) return;
+        quill.deleteText(lineStartIndex, textLength, "user");
+
+        let insertIndex = lineStartIndex;
+        if (!isInsideCollapsible(quill, insertIndex)) {
+          insertIndex = normalizeOutsideContainer(quill, insertIndex);
+        }
+        quill.setSelection(insertIndex, 0, "silent");
+
+        if (command.key === "image") {
+          pendingSlashInsertIndexRef.current = insertIndex;
+        } else {
+          pendingSlashInsertIndexRef.current = null;
+        }
+
+        let shouldFocusAfterCommand = true;
+        switch (command.key) {
+        case "image":
+          imageHandler();
+          break;
+        case "link": {
+          handleLink();
+          break;
+        }
+        case "collapsible": {
+          try {
+            insertCollapsibleAt(quill, insertIndex);
+            shouldFocusAfterCommand = false;
+          } catch {
+            // ignore
+          }
+          break;
+        }
+        case "number":
+          quill.format("list", "ordered");
+          break;
+        case "blockquote":
+          quill.format("blockquote", true);
+          break;
+        case "pullquote":
+          quill.format("blockquote", true);
+          try {
+            const cur = quill.getSelection(true);
+            if (cur) {
+              const [leaf] = quill.getLeaf(cur.index);
+              let node = leaf?.domNode as HTMLElement | undefined;
+              while (node && node !== quill.root) {
+                if (node.classList) {
+                  node.classList.add("pull-quote");
+                  break;
+                }
+                node = node.parentElement ?? undefined;
+              }
+            }
+          } catch {
+            // ignore if getLeaf not available
+          }
+          break;
+        default:
+          break;
+        }
+
+        setShowSlashMenu(false);
+        if (shouldFocusAfterCommand) {
+          quill.focus();
+        }
+      } finally {
+        isRunningSlashCommandRef.current = false;
+      }
+    },
+    [imageHandler]
   );
 
   // Quill modules configuration - stable, doesn't recreate on blogSlug change
@@ -658,6 +1379,88 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
       clipboard: {
         matchVisual: false,
       },
+      keyboard: {
+        bindings: {
+          enter: {
+            key: "Enter",
+            collapsed: true,
+            handler(this: any, range: any) {
+              const quill = this.quill;
+              if (!range) return true;
+
+              const [line] = quill.getLine(range.index);
+              if (!line) return true;
+
+              let parent: any = line.parent;
+              let collapsible: any = null;
+              while (parent) {
+                if (parent.statics?.blotName === "collapsible") {
+                  collapsible = parent;
+                  break;
+                }
+                parent = parent.parent;
+              }
+
+              if (!collapsible) return true;
+
+              let content: any = null;
+              collapsible.children.forEach((child: any) => {
+                if (child.statics?.blotName === "collapsible-content")
+                  content = child;
+              });
+              if (!content) return true;
+
+              const isLastLine = line === content.children.tail;
+              const lineLen = line?.length?.();
+              const lineHtml = (line?.domNode?.innerHTML ?? "").trim();
+              const isEmpty =
+                lineLen <= 1 || lineHtml === "<br>";
+
+              if (isLastLine && isEmpty) {
+                const lineStart = line.offset(quill.scroll);
+                const lineLength = line.length();
+                quill.deleteText(lineStart, lineLength, "user");
+                const insertIndex =
+                  collapsible.offset(quill.scroll) + collapsible.length();
+                quill.insertText(insertIndex, "\n", "user");
+                quill.setSelection(insertIndex + 1, 0, "silent");
+                return false;
+              }
+
+              return true;
+            },
+          },
+          slash: {
+            key: "/",
+            handler(
+              this: { quill: any },
+              range: { index: number }
+            ) {
+              const quill = this.quill;
+              if (!quill) return true;
+              try {
+                const [line, offset] = quill.getLine(range.index);
+                if (!line || offset !== 0) return true;
+
+                requestAnimationFrame(() => {
+                  const bounds = quill.getBounds(range.index);
+                  if (!bounds) return;
+                  const editorRect = quill.root.getBoundingClientRect();
+                  setSlashQuery("");
+                  setShowSlashMenu(true);
+                  setSlashPosition({
+                    top: editorRect.top + bounds.top + bounds.height,
+                    left: editorRect.left + bounds.left,
+                  });
+                });
+              } catch {
+                // ignore
+              }
+              return true;
+            },
+          },
+        },
+      },
     }),
     [imageHandler] // Only depends on imageHandler, which is stable
   );
@@ -672,7 +1475,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     "underline",
     "strike",
     "blockquote",
-    "list", // supports values: "ordered" | "bullet"
+    "list",
     "indent",
     "script",
     "color",
@@ -682,6 +1485,9 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     "image",
     "video",
     "code-block",
+    "collapsible",
+    "collapsible-header",
+    "collapsible-content",
   ];
 
   const isDark = theme === "dark";
@@ -709,6 +1515,52 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     .rich-text-editor .ql-editor.ql-blank::before {
       color: ${isDark ? "#9ca3af" : "#6b7280"};
       font-style: normal;
+    }
+    .rich-text-editor .ql-editor .ql-collapsible {
+      margin: 12px 0;
+    }
+    .rich-text-editor .ql-editor .ql-collapsible-header {
+      margin: 0;
+      cursor: pointer;
+      font-weight: 600;
+      padding-left: 1.25rem;
+      position: relative;
+    }
+    .rich-text-editor .ql-editor .ql-collapsible-header::before {
+      content: "";
+      border-left: 5px solid currentColor;
+      border-top: 4px solid transparent;
+      border-bottom: 4px solid transparent;
+      position: absolute;
+      left: 0;
+      top: 0.5em;
+      transition: transform 0.15s ease;
+    }
+    .rich-text-editor .ql-editor .ql-collapsible[data-open="true"] .ql-collapsible-header::before {
+      transform: rotate(90deg);
+    }
+    .rich-text-editor .ql-editor .ql-collapsible[data-open="false"] .ql-collapsible-content {
+      display: none !important;
+    }
+    .rich-text-editor .ql-editor .ql-collapsible-content {
+      display: block;
+      padding-top: 8px;
+      padding-left: 1.25rem;
+      margin-left: 0.25rem;
+      border-left: 2px solid ${isDark ? "#374151" : "#e5e7eb"};
+    }
+    .rich-text-editor .ql-editor details summary {
+      list-style: none;
+      cursor: pointer;
+      font-weight: 600;
+      pointer-events: auto;
+    }
+    .rich-text-editor .ql-editor details .ql-details-content {
+      border-top: 1px solid ${isDark ? "#374151" : "#e5e7eb"};
+      padding-top: 8px;
+    }
+    .rich-text-editor .ql-editor details[open] summary {
+      margin-bottom: 8px;
     }
     ${
       isDark
@@ -779,6 +1631,14 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     }
   `;
 
+  const iconButtonStyle: React.CSSProperties = {
+    background: "transparent",
+    border: "none",
+    cursor: "pointer",
+    fontSize: 14,
+    opacity: 0.8,
+  };
+
   return (
     <div
       className={`rich-text-editor ${className} ${isDark ? "dark-mode" : "light-mode"}`}
@@ -791,15 +1651,91 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
         <div ref={quillRef} data-testid={testId}>
           <ReactQuill
             theme="snow"
-            value={value}
+            defaultValue={normalizedValue}
             onChange={handleEditorChange}
             onChangeSelection={handleChangeSelection}
             onFocus={handleFocus}
+            onBlur={handleBlur}
             modules={modules}
             formats={formats}
             placeholder={placeholder}
           />
         </div>
+        {/* Slash command menu */}
+        {showSlashMenu && (() => {
+            const filteredCommands = SLASH_COMMANDS.filter((cmd) =>
+              cmd.key.includes(slashQuery.toLowerCase())
+            );
+            return (
+              <div
+                ref={slashMenuRef}
+                className="slash-menu"
+                style={{
+                  position: "fixed",
+                  top: `${slashPosition.top}px`,
+                  left: `${slashPosition.left}px`,
+                  zIndex: 1000,
+                  display: "flex",
+                  flexDirection: "column",
+                  padding: "4px 0",
+                  minWidth: "180px",
+                  backgroundColor: isDark ? "#1f2937" : "#ffffff",
+                  border: `1px solid ${isDark ? "#374151" : "#e5e7eb"}`,
+                  borderRadius: "6px",
+                  boxShadow:
+                    "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
+                }}
+              >
+                {slashQuery === "" && (
+                  <div
+                    style={{
+                      padding: "6px 12px",
+                      fontSize: "12px",
+                      color: isDark ? "#9ca3af" : "#6b7280",
+                    }}
+                  >
+                    Type to filter commands…
+                  </div>
+                )}
+                {filteredCommands.map((cmd) => (
+                  <button
+                    key={cmd.key}
+                    type="button"
+                    onClick={() => handleSlashCommand(cmd)}
+                    style={{
+                      width: "100%",
+                      padding: "8px 12px",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "10px",
+                      textAlign: "left",
+                      backgroundColor: "transparent",
+                      border: "none",
+                      borderRadius: "4px",
+                      cursor: "pointer",
+                      color: isDark ? "#e5e7eb" : "#374151",
+                      fontSize: "14px",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.backgroundColor = isDark
+                        ? "#374151"
+                        : "#f3f4f6";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = "transparent";
+                    }}
+                  >
+                    <Icon
+                      name={cmd.icon}
+                      size="sm"
+                      className="shrink-0"
+                    />
+                    {cmd.label}
+                  </button>
+                ))}
+              </div>
+            );
+          })()}
         {/* Selection Tooltip */}
         {showTooltip && (
           <div
@@ -1129,6 +2065,181 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
             </div>
           </div>
         )}
+        {hoveredLink &&
+          (fetchLinkPreview &&
+          (linkPreviewData.loading || linkPreviewData.title !== undefined) ? (
+           <div
+            onMouseEnter={cancelHidePreview}
+            onMouseLeave={clearPreview}
+            style={{
+              position: "fixed",
+              top: hoveredLink.top,
+              left: hoveredLink.left,
+              transform: "translateX(-50%)",
+              zIndex: 1500,
+              backgroundColor: isDark ? "#1f2937" : "#ffffff",
+              border: `1px solid ${isDark ? "#374151" : "#e5e7eb"}`,
+              borderRadius: "12px",
+              padding: "14px",
+              width: "360px",
+              boxShadow:
+                "0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05)",
+            }}
+          >
+            {/* TOP ROW */}
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                marginBottom: 10,
+                gap: 12,
+              }}
+            >
+              {/* Link Blue */}
+              <div
+                style={{
+                  flex: 1,
+                  fontSize: 13,
+                  fontWeight: 500,
+                  color: "#60a5fa",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                  cursor: "pointer",
+                }}
+                onClick={() =>
+                  window.open(hoveredLink.url, "_blank", "noopener,noreferrer")
+                }
+                title={hoveredLink.url}
+              >
+                {hoveredLink.url}
+              </div>
+
+              {/* Actions */}
+              <div style={{ display: "flex", gap: 10 }}>
+                {/* Edit */}
+                <button
+                  onClick={() => {
+                    const range = linkRangeRef.current;
+                    if (!range) return;
+                    linkSelectionRef.current = {
+                      index: range.index,
+                      length: range.length,
+                    };
+                    setLinkDefaults({
+                      text: range.text,
+                      url: hoveredLink.url,
+                    });
+                    setIsLinkModalOpen(true);
+                    clearPreview();
+                  }}
+                  style={iconButtonStyle}
+                  title="Edit link"
+                  onMouseEnter={(e) => (e.currentTarget.style.opacity = "1")}
+                  onMouseLeave={(e) => (e.currentTarget.style.opacity = "0.8")}
+                >
+                  ✏️
+                </button>
+
+                {/* Copy */}
+                <button
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    navigator.clipboard.writeText(hoveredLink.url);
+                  }}
+                  style={iconButtonStyle}
+                  title="Copy link"
+                  onMouseEnter={(e) => (e.currentTarget.style.opacity = "1")}
+                  onMouseLeave={(e) => (e.currentTarget.style.opacity = "0.8")}
+                >
+                  🔗
+                </button>
+
+                {/* Delete */}
+                <button
+                  onClick={() => {
+                    const quill = quillEditorRef.current;
+                    if (!quill) return;
+                    const range = linkRangeRef.current ?? (hoveredLink?.url ? getLinkRange(quill, hoveredLink.url) : null);
+                    if (!range) return;
+                    quill.setSelection(range.index, range.length);
+                    quill.format("link", false);
+                    clearPreview();
+                  }}
+                  style={iconButtonStyle}
+                  title="Remove link"
+                  onMouseEnter={(e) => (e.currentTarget.style.opacity = "1")}
+                  onMouseLeave={(e) => (e.currentTarget.style.opacity = "0.8")}
+                >
+                  🗑
+                </button>
+              </div>
+            </div>
+
+            {/* TITLE */}
+            <div
+              style={{
+                marginBottom: 6,
+                fontWeight: 600,
+                fontSize: 14,
+                lineHeight: 1.35,
+                color: isDark ? "#f3f4f6" : "#111827",
+              }}
+            >
+              {linkPreviewData.loading
+                ? "Loading preview..."
+                : linkPreviewData.title || "No preview available"}
+            </div>
+          </div>
+          ) : (
+            <div
+              onMouseEnter={cancelHidePreview}
+              onMouseLeave={clearPreview}
+              style={{
+                position: "fixed",
+                top: hoveredLink.top,
+                left: hoveredLink.left,
+                transform: "translateX(-50%)",
+                zIndex: 1500,
+                backgroundColor: isDark ? "#1f2937" : "#ffffff",
+                border: `1px solid ${isDark ? "#374151" : "#e5e7eb"}`,
+                borderRadius: "8px",
+                padding: "8px 12px",
+                fontSize: "13px",
+                maxWidth: "320px",
+                boxShadow:
+                  "0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06)",
+                wordBreak: "break-all",
+              }}
+            >
+              <div
+                style={{
+                  fontWeight: 500,
+                  marginBottom: "4px",
+                  color: isDark ? "#e5e7eb" : "#111827",
+                }}
+              >
+                Link preview
+              </div>
+
+              <div
+                style={{
+                  color: isDark ? "#9ca3af" : "#374151",
+                }}
+              >
+                {hoveredLink.url}
+              </div>
+            </div>
+          ))}
+        <LinkEditorModal
+          isOpen={isLinkModalOpen}
+          onClose={() => setIsLinkModalOpen(false)}
+          onSubmit={applyLink}
+          defaultText={linkDefaults.text}
+          defaultUrl={linkDefaults.url}
+        />
       </div>
     </div>
   );
