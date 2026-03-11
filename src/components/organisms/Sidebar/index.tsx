@@ -49,6 +49,8 @@ export interface SidebarProps {
   openWidth?: string;
   /** Width when sidebar is closed (default: 80px) */
   closedWidth?: string;
+  /** Optional content below footer items (e.g. version text) */
+  footerExtra?: ReactNode;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -63,6 +65,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   mainContentClassName,
   openWidth = "200px",
   closedWidth = "80px",
+  footerExtra,
 }) => {
   const isActive = (path: string, exact?: boolean) => {
     if (exact) {
@@ -229,6 +232,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
             return <div key={item.id}>{content}</div>;
           })}
+          {footerExtra && (
+            <div className="pt-2 text-center text-[12pt] text-gray-500 dark:text-gray-400">
+              {footerExtra}
+            </div>
+          )}
         </div>
       )}
     </aside>
