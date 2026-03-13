@@ -1,0 +1,7 @@
+{
+  "scale": {
+    "name": { "value": "wedwise" },
+    "multiplier": { "value": "1" },
+    "description": { "value": "Wedwise scale - color palette read from client via tokensUrl (ScaleProvider)" }
+  }
+}

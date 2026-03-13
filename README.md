@@ -1,6 +1,6 @@
-# @supriyadies-work/na-design-system
+# @supriyadies-work/supr-design-system
 
-Design system package for **Nisa Aulia Portfolio** — design tokens, React components, and theme scales (nisaaulia / supriyadies).
+Design system package — design tokens, React components, and theme scales (nisaaulia / supriyadies / wedwise). Scalable per-brand theming with optional runtime assets (fonts, IcoMoon icons, tokens).
 
 **Documentation & visual reference:** [nisaaulia.com/design-pattern](https://nisaaulia.com/design-pattern)
 
@@ -11,9 +11,9 @@ We’re open to feedback and improvements. Suggestions, issues, and pull request
 ## Installation
 
 ```bash
-npm install @supriyadies-work/na-design-system
+npm install @supriyadies-work/supr-design-system
 # or
-yarn add @supriyadies-work/na-design-system
+yarn add @supriyadies-work/supr-design-system
 ```
 
 ### Peer dependencies
@@ -26,6 +26,26 @@ Ensure these are installed in your project:
 - `next-themes` ^0.4.0 (for theming)
 - `lottie-react` ^2.4.0 (for Lottie animations)
 
+### Setelah install (optional, for scalable theming)
+
+To use per-brand theming with your own tokens, fonts, and icons:
+
+1. **Generate example files** in your project:
+   ```bash
+   npx @supriyadies-work/supr-design-system init
+   ```
+   This creates `theme.json`, `fonts.json`, and `icons/selection.json` (e.g. under `src/assets`).
+
+2. **Add your assets:** Edit the generated files, add font files under `fonts/`, and optionally export your icon set from [IcoMoon](https://icomoon.io) and replace `icons/selection.json`.
+
+3. **Configure ScaleProvider** with the URLs your app serves these from:
+   - `assetBaseUrl` — base URL for assets
+   - `tokensUrl` — URL to your theme/tokens JSON
+   - `fontsManifestUrl` — URL to `fonts.json`
+   - `iconSelectionUrl` — URL to IcoMoon `selection.json`
+
+4. See the full guide in this README (Scales, runtime assets) and the repository for more details.
+
 ---
 
 ## Usage
@@ -33,7 +53,7 @@ Ensure these are installed in your project:
 ### Components
 
 ```tsx
-import { Button, Card, ScaleProvider } from "@supriyadies-work/na-design-system";
+import { Button, Card, ScaleProvider } from "@supriyadies-work/supr-design-system";
 
 // Default scale: nisaaulia
 <ScaleProvider>
@@ -50,15 +70,15 @@ import { Button, Card, ScaleProvider } from "@supriyadies-work/na-design-system"
 Per-component imports (better tree-shaking):
 
 ```tsx
-import { Button } from "@supriyadies-work/na-design-system/components/Button";
+import { Button } from "@supriyadies-work/supr-design-system/components/Button";
 ```
 
 ### Tokens (JS)
 
 ```tsx
-import { tokens, getToken, getCSSVar, theme } from "@supriyadies-work/na-design-system";
+import { tokens, getToken, getCSSVar, theme } from "@supriyadies-work/supr-design-system";
 // or
-import { tokens } from "@supriyadies-work/na-design-system/js/tokens";
+import { tokens } from "@supriyadies-work/supr-design-system/js/tokens";
 ```
 
 ### Tokens (CSS)
@@ -66,19 +86,19 @@ import { tokens } from "@supriyadies-work/na-design-system/js/tokens";
 In your global CSS or layout:
 
 ```css
-@import "@supriyadies-work/na-design-system/css";
+@import "@supriyadies-work/supr-design-system/css";
 ```
 
 For scale-specific variables (per brand):
 
 ```css
-@import "@supriyadies-work/na-design-system/css/scale";
+@import "@supriyadies-work/supr-design-system/css/scale";
 ```
 
 ### Utilities
 
 ```tsx
-import { cn, useScale, getScaleConfig } from "@supriyadies-work/na-design-system";
+import { cn, useScale, getScaleConfig } from "@supriyadies-work/supr-design-system";
 ```
 
 ---
@@ -101,12 +121,13 @@ import { cn, useScale, getScaleConfig } from "@supriyadies-work/na-design-system
 
 ## Scales (brands)
 
-Two theme scales are supported:
+Theme scales supported:
 
 - **nisaaulia** — default
-- **supriyadies**
+- **supriyadies** — larger spacing/typography
+- **wedwise** — per-scale color palette (and optional font/icon set)
 
-Use `ScaleProvider` and `defaultScale` to choose a scale; components and tokens follow the active scale.
+Use `ScaleProvider` and `defaultScale` to choose a scale. For scalable theming (different fonts, colors, or icon set per brand), pass `fontsManifestUrl`, `iconSelectionUrl`, and/or `tokensUrl` so the design system loads your assets at runtime.
 
 ---
 

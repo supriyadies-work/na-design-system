@@ -1,4 +1,4 @@
-export { Text } from "./Text";
+export { Text, type TextVariant } from "./Text";
 export { Button } from "./Button";
 export { Input } from "./Input";
 export { Textarea } from "./Textarea";

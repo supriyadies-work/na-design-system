@@ -6,7 +6,10 @@ import React from "react";
  * All icons use currentColor for easy theming
  */
 
-export const iconPaths = {
+import type { ScaleName } from "../../../utils/scale";
+
+/** Default SVG icon set (used when no runtime IcoMoon selection is provided) */
+export const iconPathsDefault = {
   arrowLeft: (
     <>
       <path
@@ -266,4 +269,22 @@ export const iconPaths = {
   ),
 };
 
-export type IconName = keyof typeof iconPaths;
+/** Backward compatibility: same as iconPathsDefault */
+export const iconPaths = iconPathsDefault;
+
+/** Registry of icon sets per scale (SVG paths). Use getIconPaths(scale) for resolution. */
+export const iconPathsByScale: Record<string, Record<string, React.ReactNode>> = {
+  default: iconPathsDefault,
+  nisaaulia: iconPathsDefault,
+  supriyadies: iconPathsDefault,
+  wedwise: iconPathsDefault,
+};
+
+/**
+ * Get SVG icon paths for the given scale. Falls back to default set if scale has no custom set.
+ */
+export function getIconPaths(scale: ScaleName): Record<string, React.ReactNode> {
+  return iconPathsByScale[scale] ?? iconPathsByScale.default ?? iconPathsDefault;
+}
+
+export type IconName = keyof typeof iconPathsDefault;
