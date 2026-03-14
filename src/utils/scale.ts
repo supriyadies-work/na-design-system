@@ -1,12 +1,12 @@
 /**
  * Scale System for Dynamic Design Tokens
- * Supports predefined scales (nisaaulia, supriyadies, wedwise) and any dynamic scale name.
+ * Supports predefined scales (nisaaulia, supriyadies, weddio, wedwise) and any dynamic scale name.
  * Dynamic scales: client passes defaultScale="brandX" and tokensUrl with color.byScale.brandx;
  * no config change in design system needed.
  */
 
 /** Known scales get autocomplete; any string is allowed for client-defined scales */
-export type ScaleName = "nisaaulia" | "supriyadies" | "wedwise" | (string & {});
+export type ScaleName = "nisaaulia" | "supriyadies" | "weddio" | "wedwise" | (string & {});
 
 export interface ScaleConfig {
   name: string;
@@ -22,12 +22,12 @@ export interface ScaleConfig {
   colorTokenPrefix?: string;
   /** Direct hex overrides for --color-primary-*, --color-secondary-*, etc. (key: CSS var name without --) */
   colorOverrides?: Record<string, string>;
-  /** Icon set key for registry (e.g. "default" | "wedwise") */
-  iconSet?: "default" | "wedwise";
+  /** Icon set key for registry (e.g. "default" | "weddio" | "wedwise") */
+  iconSet?: "default" | "weddio" | "wedwise";
 }
 
 /** Predefined scale keys (used for typed scales object; dynamic scales are not listed) */
-export type KnownScaleName = "nisaaulia" | "supriyadies" | "wedwise";
+export type KnownScaleName = "nisaaulia" | "supriyadies" | "weddio" | "wedwise";
 
 /**
  * Scale configurations (predefined). Dynamic scale names use auto-generated config via getScaleConfigFor().
@@ -51,6 +51,18 @@ export const scales: Record<KnownScaleName, ScaleConfig> = {
     borderRadiusMultiplier: 1.2,
     description: "Larger scale for Supriyadies brand - increased spacing and typography",
   },
+  weddio: {
+    name: "weddio",
+    multiplier: 1,
+    spacingMultiplier: 1,
+    fontSizeMultiplier: 1,
+    lineHeightMultiplier: 1,
+    borderRadiusMultiplier: 1,
+    description: "Weddio brand scale - uses Wedwise color token prefix for backward compatibility",
+    colorTokenPrefix: "color-by-scale-wedwise",
+    iconSet: "weddio",
+  },
+  /** @deprecated Use weddio scale instead; kept for backward compatibility */
   wedwise: {
     name: "wedwise",
     multiplier: 1,

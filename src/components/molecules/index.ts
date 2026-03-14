@@ -23,3 +23,6 @@ export { default as SearchAndFilter } from "./SearchAndFilter";
 export { GlassRadioGroup } from "./GlassRadioGroup";
 export { FilterGroup } from "./FilterGroup";
 export { LoadingScreen } from "./LoadingScreen";
+export { PieChart, BarChart } from "./Chart";
+export type { ChartDataItem } from "./Chart";
+export type { PieChartProps, BarChartProps } from "./Chart";

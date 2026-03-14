@@ -1,6 +1,6 @@
 # @supriyadies-work/supr-design-system
 
-Design system package — design tokens, React components, and theme scales (nisaaulia / supriyadies / wedwise). Scalable per-brand theming with optional runtime assets (fonts, IcoMoon icons, tokens).
+Design system package — design tokens, React components, and theme scales (nisaaulia / supriyadies / weddio / wedwise). Scalable per-brand theming with optional runtime assets (fonts, IcoMoon icons, tokens).
 
 **Documentation & visual reference:** [nisaaulia.com/design-pattern](https://nisaaulia.com/design-pattern)
 
@@ -125,7 +125,8 @@ Theme scales supported:
 
 - **nisaaulia** — default
 - **supriyadies** — larger spacing/typography
-- **wedwise** — per-scale color palette (and optional font/icon set)
+- **weddio** — per-scale color palette (and optional font/icon set) for Weddio (uses Wedwise token prefix for backward compatibility)
+- **wedwise** — legacy alias for Weddio scale (kept for backward compatibility)
 
 Use `ScaleProvider` and `defaultScale` to choose a scale. For scalable theming (different fonts, colors, or icon set per brand), pass `fontsManifestUrl`, `iconSelectionUrl`, and/or `tokensUrl` so the design system loads your assets at runtime.
 

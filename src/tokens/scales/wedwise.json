@@ -2,6 +2,6 @@
   "scale": {
     "name": { "value": "wedwise" },
     "multiplier": { "value": "1" },
-    "description": { "value": "Wedwise scale - color palette read from client via tokensUrl (ScaleProvider)" }
+    "description": { "value": "Weddio scale - color palette read from client via tokensUrl (ScaleProvider). Token prefix stays wedwise for backward compatibility." }
   }
 }

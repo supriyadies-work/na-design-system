@@ -277,6 +277,7 @@ export const iconPathsByScale: Record<string, Record<string, React.ReactNode>> =
   default: iconPathsDefault,
   nisaaulia: iconPathsDefault,
   supriyadies: iconPathsDefault,
+  weddio: iconPathsDefault,
   wedwise: iconPathsDefault,
 };
 

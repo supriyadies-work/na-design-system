@@ -1,6 +1,6 @@
 "use client";
 
-import React, { ReactNode } from "react";
+import React, { ReactNode, useState, useEffect } from "react";
 import Link from "next/link";
 import { cn } from "@na-design-system/utils/cn";
 
@@ -8,11 +8,14 @@ export interface SidebarMenuItem {
   id: string;
   label: string;
   icon: string | ReactNode;
-  path: string;
+  /** Path for direct link; omit when using children (collapsible group) */
+  path?: string;
   exact?: boolean;
   onClick?: () => void;
   onMouseEnter?: () => void;
   onFocus?: () => void;
+  /** Child items: renders as collapsible accordion section */
+  children?: SidebarMenuItem[];
 }
 
 export interface SidebarFooterItem {
@@ -24,6 +27,140 @@ export interface SidebarFooterItem {
   onMouseEnter?: () => void;
   onFocus?: () => void;
   variant?: "default" | "error";
+}
+
+function SidebarCollapsibleGroup({
+  item,
+  currentPath,
+  sidebarOpen,
+  isActive,
+}: {
+  item: SidebarMenuItem;
+  currentPath: string;
+  sidebarOpen: boolean;
+  isActive: (path: string, exact?: boolean) => boolean;
+}) {
+  const children = item.children ?? [];
+  const hasActiveChild = children.some((c) => c.path && isActive(c.path, c.exact));
+  const [open, setOpen] = useState(hasActiveChild);
+
+  useEffect(() => {
+    if (hasActiveChild) setOpen(true);
+  }, [currentPath, hasActiveChild]);
+
+  const trigger = (
+    <div
+      className={cn(
+        "flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors cursor-pointer",
+        hasActiveChild
+          ? "bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400"
+          : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+      )}
+    >
+      {typeof item.icon === "string" ? (
+        <span className="text-xl">{item.icon}</span>
+      ) : (
+        item.icon
+      )}
+      {sidebarOpen && (
+        <>
+          <span className="font-medium flex-1">{item.label}</span>
+          <span
+            className={cn(
+              "inline-block transition-transform",
+              open ? "rotate-180" : "rotate-0"
+            )}
+            aria-hidden
+          >
+            <svg
+              className="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M19 9l-7 7-7-7"
+              />
+            </svg>
+          </span>
+        </>
+      )}
+    </div>
+  );
+
+  if (!sidebarOpen) {
+    return (
+      <div key={item.id} className="flex justify-center py-2" title={item.label}>
+        {typeof item.icon === "string" ? (
+          <span className="text-xl">{item.icon}</span>
+        ) : (
+          item.icon
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div key={item.id} className="space-y-0.5">
+      <button
+        type="button"
+        className="w-full text-left"
+        onClick={() => setOpen(!open)}
+        onMouseEnter={item.onMouseEnter}
+        onFocus={item.onFocus}
+        aria-expanded={open}
+        aria-controls={`sidebar-group-${item.id}`}
+      >
+        {trigger}
+      </button>
+      <div
+        id={`sidebar-group-${item.id}`}
+        role="region"
+        aria-label={item.label}
+        className={cn(
+          "overflow-hidden transition-all duration-200 ease-out",
+          open ? "max-h-[1000px] opacity-100" : "max-h-0 opacity-0"
+        )}
+      >
+        <div className="pl-4 pt-0.5 space-y-0.5 border-l-2 border-gray-200 dark:border-gray-600 ml-5">
+          {children.map((child) => {
+            if (!child.path) return null;
+            const childContent = (
+              <div
+                className={cn(
+                  "flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors text-sm",
+                  isActive(child.path, child.exact)
+                    ? "bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400"
+                    : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700"
+                )}
+              >
+                {typeof child.icon === "string" ? (
+                  <span className="text-lg">{child.icon}</span>
+                ) : (
+                  child.icon
+                )}
+                <span className="font-medium">{child.label}</span>
+              </div>
+            );
+            return (
+              <Link
+                key={child.id}
+                href={child.path}
+                onClick={child.onClick}
+                onMouseEnter={child.onMouseEnter}
+                onFocus={child.onFocus}
+              >
+                {childContent}
+              </Link>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
 }
 
 export interface SidebarProps {
@@ -129,11 +266,24 @@ export const Sidebar: React.FC<SidebarProps> = ({
       {/* Navigation */}
       <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
         {menuItems.map((item) => {
+          // Collapsible group (accordion): item with children
+          if (item.children && item.children.length > 0) {
+            return (
+              <SidebarCollapsibleGroup
+                key={item.id}
+                item={item}
+                currentPath={currentPath}
+                sidebarOpen={sidebarOpen}
+                isActive={isActive}
+              />
+            );
+          }
+
           const content = (
             <div
               className={cn(
                 "flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors",
-                isActive(item.path, item.exact)
+                item.path && isActive(item.path, item.exact)
                   ? "bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400"
                   : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
               )}
@@ -147,7 +297,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </div>
           );
 
-          // If item has path, use Link; otherwise use button
           if (item.path) {
             return (
               <Link
@@ -162,7 +311,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
             );
           }
 
-          // Button for items without path
           return (
             <button
               key={item.id}
