@@ -78,7 +78,7 @@ export const PieChart: React.FC<PieChartProps> = ({
             ))}
           </Pie>
           <Tooltip
-            formatter={(value: number) => [value, "Jumlah"]}
+            formatter={(value: number) => [value, "Jumlah responden"]}
             contentStyle={{
               borderRadius: "8px",
               border: "1px solid var(--color-neutral-200, #e5e5e5)",

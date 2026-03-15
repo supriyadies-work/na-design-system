@@ -29,6 +29,8 @@ interface TextProps {
   as?: React.ElementType;
   style?: React.CSSProperties;
   testId?: string;
+  /** Untuk as="label": mengaitkan label ke form control via id. */
+  htmlFor?: string;
 }
 
 /** Typography tokens (Figma: text display, text h1–h5, text subtitle 01–03, text body 01–03) */
@@ -82,11 +84,16 @@ const defaultTags: Record<string, React.ElementType> = {
 };
 
 export const Text = React.forwardRef<HTMLElement, TextProps>(
-  ({ children, variant = "body", className, as, style, testId }, ref) => {
+  ({ children, variant = "body", className, as, style, testId, htmlFor }, ref) => {
     const Component = as || defaultTags[variant];
     const tokenStyle = tokenVariants[variant];
     const baseStyles = variantStyles[variant];
     const isTokenVariant = !!tokenStyle;
+
+    const labelProps =
+      (Component === "label" || as === "label") && htmlFor != null
+        ? { htmlFor }
+        : undefined;
 
     return (
       <Component
@@ -101,6 +108,7 @@ export const Text = React.forwardRef<HTMLElement, TextProps>(
             : style
         }
         data-testid={testId}
+        {...labelProps}
       >
         {children}
       </Component>
