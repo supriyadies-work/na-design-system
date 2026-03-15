@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { Modal } from "@na-design-system/components/molecules/Modal";
-import { Button } from "@na-design-system/components/atoms/Button";
+import { Modal } from "@supriyadies-work/supr-design-system/components/molecules/Modal";
+import { Button } from "@supriyadies-work/supr-design-system/components/atoms/Button";
 
 interface LinkEditorModalProps {
   isOpen: boolean;

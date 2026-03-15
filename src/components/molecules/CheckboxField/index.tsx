@@ -1,6 +1,6 @@
 import React from "react";
-import { Checkbox } from "@na-design-system/components/atoms/Checkbox";
-import { Text } from "@na-design-system/components/atoms/Text";
+import { Checkbox } from "@supriyadies-work/supr-design-system/components/atoms/Checkbox";
+import { Text } from "@supriyadies-work/supr-design-system/components/atoms/Text";
 
 interface CheckboxFieldProps {
   label: string;

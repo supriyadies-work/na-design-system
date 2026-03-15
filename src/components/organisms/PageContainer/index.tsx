@@ -1,5 +1,5 @@
 import React from "react";
-import { cn } from "@na-design-system/utils/cn";
+import { cn } from "@supriyadies-work/supr-design-system/utils/cn";
 
 interface PageContainerProps {
   children: React.ReactNode;

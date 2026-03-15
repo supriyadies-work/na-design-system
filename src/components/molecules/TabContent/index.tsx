@@ -2,7 +2,7 @@
 
 import React from "react";
 import { GlassRadioGroup } from "../GlassRadioGroup";
-import { Button, Icon } from "@na-design-system/components/atoms";
+import { Button, Icon } from "@supriyadies-work/supr-design-system/components/atoms";
 
 interface TabOption {
   id: string;

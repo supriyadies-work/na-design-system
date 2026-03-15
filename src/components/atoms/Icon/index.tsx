@@ -1,5 +1,5 @@
 import React, { useContext } from "react";
-import { cn } from "@na-design-system/utils/cn";
+import { cn } from "@supriyadies-work/supr-design-system/utils/cn";
 import { getIconPaths, iconPaths, type IconName } from "./icons";
 import { ScaleContext, useIconAssets } from "../../../utils/ScaleProvider";
 import type { ScaleName } from "../../../utils/scale";

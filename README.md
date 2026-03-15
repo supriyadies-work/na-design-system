@@ -146,4 +146,4 @@ npm run build:docs     # Generate docs metadata
 ## References
 
 - **Design patterns & docs:** [nisaaulia.com/design-pattern](https://nisaaulia.com/design-pattern)
-- **Repository:** [github.com/supriyadies-work/na-design-system](https://github.com/supriyadies-work/na-design-system)
+- **Repository:** [github.com/supriyadies-work/supr-design-system](https://github.com/supriyadies-work/supr-design-system)

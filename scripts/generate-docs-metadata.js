@@ -1,7 +1,7 @@
 "use strict";
 
 /**
- * Docs metadata generator for na-design-system.
+ * Docs metadata generator for supr-design-system.
  * Output: docs-metadata.json consumed by na-profile design-pattern page.
  *
  * Output shape (DocsMetadata):

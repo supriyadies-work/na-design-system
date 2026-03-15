@@ -43,5 +43,5 @@ console.log(`
   3. Configure ScaleProvider:
      assetBaseUrl, tokensUrl?, fontsManifestUrl?, iconSelectionUrl?
 
-  4. See full guide: https://github.com/supriyadies-work/na-design-system#readme
+  4. See full guide: https://github.com/supriyadies-work/supr-design-system#readme
 `);

@@ -1,7 +1,7 @@
 import React from "react";
-import { Button } from "@na-design-system/components/atoms/Button";
-import { Text } from "@na-design-system/components/atoms/Text";
-import { cn } from "@na-design-system/utils/cn";
+import { Button } from "@supriyadies-work/supr-design-system/components/atoms/Button";
+import { Text } from "@supriyadies-work/supr-design-system/components/atoms/Text";
+import { cn } from "@supriyadies-work/supr-design-system/utils/cn";
 
 interface PaginationProps {
   currentPage: number;

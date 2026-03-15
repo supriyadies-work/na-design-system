@@ -1,11 +1,11 @@
 "use client";
 
 import React from "react";
-import { Input, Textarea, Text } from "@na-design-system/components/atoms";
+import { Input, Textarea, Text } from "@supriyadies-work/supr-design-system/components/atoms";
 import {
   validateField,
   ValidationRule,
-} from "@na-design-system/utils/validation";
+} from "@supriyadies-work/supr-design-system/utils/validation";
 
 interface FormFieldProps {
   label: string;

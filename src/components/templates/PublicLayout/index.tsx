@@ -1,5 +1,5 @@
 import React, { ReactNode } from "react";
-import { PageContainer } from "@na-design-system/components/organisms/PageContainer";
+import { PageContainer } from "@supriyadies-work/supr-design-system/components/organisms/PageContainer";
 
 interface PublicLayoutProps {
   children: ReactNode;

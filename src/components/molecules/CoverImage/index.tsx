@@ -1,8 +1,8 @@
 "use client";
 
 import React from "react";
-import { Image } from "@na-design-system/components/atoms/Image";
-import { cn } from "@na-design-system/utils/cn";
+import { Image } from "@supriyadies-work/supr-design-system/components/atoms/Image";
+import { cn } from "@supriyadies-work/supr-design-system/utils/cn";
 
 interface CoverImageProps {
   src: string;

@@ -1,7 +1,7 @@
 import React from "react";
-import { Text } from "@na-design-system/components/atoms/Text";
-import { Button } from "@na-design-system/components/atoms/Button";
-import { cn } from "@na-design-system/utils/cn";
+import { Text } from "@supriyadies-work/supr-design-system/components/atoms/Text";
+import { Button } from "@supriyadies-work/supr-design-system/components/atoms/Button";
+import { cn } from "@supriyadies-work/supr-design-system/utils/cn";
 
 interface FilterGroupProps {
   label: string;

@@ -1,7 +1,7 @@
 "use client";
 
 import { SearchInput } from "../SearchInput";
-import { Button } from "@na-design-system/components/atoms/Button";
+import { Button } from "@supriyadies-work/supr-design-system/components/atoms/Button";
 
 interface FilterOption {
   id: string;
