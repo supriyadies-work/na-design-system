@@ -73,6 +73,33 @@ Per-component imports (better tree-shaking):
 import { Button } from "@supriyadies-work/supr-design-system/components/Button";
 ```
 
+### Toast notifications (non-blocking)
+
+Use `ToastProvider` once near the root of your app, then call `pushToast` anywhere via `useToast`.
+
+```tsx
+"use client";
+
+import { ToastProvider, useToast } from "@supriyadies-work/supr-design-system/components/molecules";
+
+function SaveButton() {
+  const { pushToast } = useToast();
+  return (
+    <button
+      onClick={() => pushToast({ message: "Draft tersimpan", variant: "success" })}
+    >
+      Save
+    </button>
+  );
+}
+
+export default function AppRoot({ children }: { children: React.ReactNode }) {
+  return <ToastProvider>{children}</ToastProvider>;
+}
+```
+
+- Default behavior: top-right, auto-hide in 5 seconds, dismiss via close button or swipe.
+
 ### Tokens (JS)
 
 ```tsx
