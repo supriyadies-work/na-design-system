@@ -1,7 +1,7 @@
 import React from "react";
 import { Modal } from "../Modal";
-import { Button } from "@na-design-system/components/atoms/Button";
-import { Text } from "@na-design-system/components/atoms/Text";
+import { Button } from "@supriyadies-work/supr-design-system/components/atoms/Button";
+import { Text } from "@supriyadies-work/supr-design-system/components/atoms/Text";
 
 interface DialogProps {
   isOpen: boolean;

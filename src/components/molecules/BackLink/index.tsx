@@ -2,9 +2,9 @@
 
 import React from "react";
 import Link from "next/link";
-import { Text } from "@na-design-system/components/atoms/Text";
-import { Icon } from "@na-design-system/components/atoms/Icon";
-import { cn } from "@na-design-system/utils/cn";
+import { Text } from "@supriyadies-work/supr-design-system/components/atoms/Text";
+import { Icon } from "@supriyadies-work/supr-design-system/components/atoms/Icon";
+import { cn } from "@supriyadies-work/supr-design-system/utils/cn";
 
 interface BackLinkProps {
   href: string;

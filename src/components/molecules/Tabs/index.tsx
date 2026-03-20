@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useState } from "react";
-import { cn } from "@na-design-system/utils/cn";
-import { Text } from "@na-design-system/components/atoms/Text";
+import { cn } from "@supriyadies-work/supr-design-system/utils/cn";
+import { Text } from "@supriyadies-work/supr-design-system/components/atoms/Text";
 
 interface Tab {
   id: string;

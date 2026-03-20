@@ -1,6 +1,6 @@
 import React from "react";
-import { Radio } from "@na-design-system/components/atoms/Radio";
-import { Text } from "@na-design-system/components/atoms/Text";
+import { Radio } from "@supriyadies-work/supr-design-system/components/atoms/Radio";
+import { Text } from "@supriyadies-work/supr-design-system/components/atoms/Text";
 
 interface RadioFieldProps {
   label: string;

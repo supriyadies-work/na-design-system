@@ -1,9 +1,9 @@
 import React, { FormEvent } from "react";
-import { FormGroup } from "@na-design-system/components/molecules/FormGroup";
-import { Button } from "@na-design-system/components/atoms/Button";
-import { Alert } from "@na-design-system/components/molecules/Alert";
-import { validateForm, ValidationSchema } from "@na-design-system/utils/validation";
-import { cn } from "@na-design-system/utils/cn";
+import { FormGroup } from "@supriyadies-work/supr-design-system/components/molecules/FormGroup";
+import { Button } from "@supriyadies-work/supr-design-system/components/atoms/Button";
+import { Alert } from "@supriyadies-work/supr-design-system/components/molecules/Alert";
+import { validateForm, ValidationSchema } from "@supriyadies-work/supr-design-system/utils/validation";
+import { cn } from "@supriyadies-work/supr-design-system/utils/cn";
 
 interface FormField {
   name: string;

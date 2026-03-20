@@ -16,7 +16,19 @@
     "4xl": { "value": "2.25rem" },
     "5xl": { "value": "3rem" },
     "6xl": { "value": "3.75rem" },
-    "7xl": { "value": "4.5rem" }
+    "7xl": { "value": "4.5rem" },
+    "display": { "value": "52px" },
+    "h1": { "value": "40px" },
+    "h2": { "value": "32px" },
+    "h3": { "value": "28px" },
+    "h4": { "value": "24px" },
+    "h5": { "value": "20px" },
+    "subtitle01": { "value": "17px" },
+    "subtitle02": { "value": "16px" },
+    "subtitle03": { "value": "14px" },
+    "body01": { "value": "16px" },
+    "body02": { "value": "14px" },
+    "body03": { "value": "12px" }
   },
   "fontWeight": {
     "light": { "value": "300" },
@@ -29,7 +41,11 @@
     "tight": { "value": "1.25" },
     "normal": { "value": "1.5" },
     "relaxed": { "value": "1.75" },
-    "loose": { "value": "2" }
+    "loose": { "value": "2" },
+    "display": { "value": "1.3" },
+    "heading": { "value": "1" },
+    "subtitle": { "value": "1.3" },
+    "body": { "value": "1.5" }
   },
   "letterSpacing": {
     "tighter": { "value": "-0.05em" },

@@ -1,23 +1,23 @@
 import React from "react";
 import Link from "next/link";
-import { cn } from "@na-design-system/utils/cn";
+import { cn } from "@supriyadies-work/supr-design-system/utils/cn";
 
-interface ButtonProps {
+type ButtonVariant =
+  | "primary"
+  | "secondary"
+  | "outline"
+  | "ghost"
+  | "danger"
+  | "filter"
+  | "text";
+
+interface ButtonProps extends Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, "type" | "className"> {
   children: React.ReactNode;
-  variant?:
-    | "primary"
-    | "secondary"
-    | "outline"
-    | "ghost"
-    | "danger"
-    | "filter"
-    | "text";
+  variant?: ButtonVariant;
   size?: "sm" | "md" | "lg";
   className?: string;
-  onClick?: () => void;
-  onMouseEnter?: () => void;
-  onFocus?: () => void;
   href?: string;
+  /** Default "button" so that inside a form the button does not submit unless explicitly type="submit". */
   type?: "button" | "submit" | "reset";
   disabled?: boolean;
   isActive?: boolean;
@@ -68,6 +68,7 @@ export const Button: React.FC<ButtonProps> = ({
   isActive = false,
   hideFocusRing = false,
   testId,
+  ...restButtonProps
 }) => {
   const focusRingStyles = hideFocusRing
     ? "focus:outline-none focus:ring-0 focus:ring-offset-0"
@@ -99,9 +100,9 @@ export const Button: React.FC<ButtonProps> = ({
       <Link
         href={href}
         className={classes}
-        onClick={onClick}
-        onMouseEnter={onMouseEnter}
-        onFocus={onFocus}
+        onClick={onClick as unknown as React.MouseEventHandler<HTMLAnchorElement>}
+        onMouseEnter={onMouseEnter as unknown as React.MouseEventHandler<HTMLAnchorElement>}
+        onFocus={onFocus as unknown as React.FocusEventHandler<HTMLAnchorElement>}
         data-testid={testId}
       >
         {children}
@@ -109,10 +110,23 @@ export const Button: React.FC<ButtonProps> = ({
     );
   }
 
+  // Pastikan type selalu "button" | "submit" | "reset" (default "button" agar tidak submit form)
+  const buttonType: "button" | "submit" | "reset" =
+    type === "submit" || type === "reset" ? type : "button";
+
+  // Untuk type="button" di dalam form: prevent default supaya klik tidak memicu submit
+  const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+    if (buttonType === "button") {
+      e.preventDefault();
+    }
+    onClick?.(e);
+  };
+
   return (
     <button
-      type={type}
-      onClick={onClick}
+      {...restButtonProps}
+      type={buttonType}
+      onClick={handleClick}
       onMouseEnter={onMouseEnter}
       onFocus={onFocus}
       disabled={disabled}

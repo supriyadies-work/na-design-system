@@ -1,6 +1,6 @@
 import React from "react";
 import NextLink from "next/link";
-import { cn } from "@na-design-system/utils/cn";
+import { cn } from "@supriyadies-work/supr-design-system/utils/cn";
 
 interface LinkProps {
   href: string;

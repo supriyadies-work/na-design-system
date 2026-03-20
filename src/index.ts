@@ -13,10 +13,13 @@ export { cn } from "./utils/cn";
 // Export scale utilities
 export {
   type ScaleName,
+  type KnownScaleName,
   type ScaleConfig,
   scales,
   getCurrentScale,
   getScaleConfig,
+  getScaleConfigFor,
+  normalizeScaleName,
   setScale,
   applyScale,
   getScaleCSSVar,

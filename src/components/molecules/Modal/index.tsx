@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useEffect } from "react";
-import { Button } from "@na-design-system/components/atoms/Button";
-import { cn } from "@na-design-system/utils/cn";
+import { Button } from "@supriyadies-work/supr-design-system/components/atoms/Button";
+import { cn } from "@supriyadies-work/supr-design-system/utils/cn";
 
 interface ModalProps {
   isOpen: boolean;

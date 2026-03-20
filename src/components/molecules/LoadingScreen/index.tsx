@@ -1,6 +1,6 @@
 import React from "react";
-import { Spinner } from "@na-design-system/components/atoms/Spinner";
-import { cn } from "@na-design-system/utils/cn";
+import { Spinner } from "@supriyadies-work/supr-design-system/components/atoms/Spinner";
+import { cn } from "@supriyadies-work/supr-design-system/utils/cn";
 
 export interface LoadingScreenProps {
   /** Message shown below the spinner. Default: "Loading..." */

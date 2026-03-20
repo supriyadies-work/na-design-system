@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useId } from "react";
-import { cn } from "@na-design-system/utils/cn";
+import { cn } from "@supriyadies-work/supr-design-system/utils/cn";
 
 interface TextareaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
   label?: string;

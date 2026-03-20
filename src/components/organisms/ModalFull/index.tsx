@@ -1,8 +1,8 @@
 import React, { useEffect } from "react";
-import { Modal } from "@na-design-system/components/molecules/Modal";
-import { Button } from "@na-design-system/components/atoms/Button";
-import { Text } from "@na-design-system/components/atoms/Text";
-import { cn } from "@na-design-system/utils/cn";
+import { Modal } from "@supriyadies-work/supr-design-system/components/molecules/Modal";
+import { Button } from "@supriyadies-work/supr-design-system/components/atoms/Button";
+import { Text } from "@supriyadies-work/supr-design-system/components/atoms/Text";
+import { cn } from "@supriyadies-work/supr-design-system/utils/cn";
 
 interface ModalFullProps {
   isOpen: boolean;

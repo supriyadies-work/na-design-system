@@ -1,7 +1,7 @@
 import React from "react";
-import { Select } from "@na-design-system/components/atoms/Select";
-import { Label } from "@na-design-system/components/atoms/Label";
-import { Text } from "@na-design-system/components/atoms/Text";
+import { Select } from "@supriyadies-work/supr-design-system/components/atoms/Select";
+import { Label } from "@supriyadies-work/supr-design-system/components/atoms/Label";
+import { Text } from "@supriyadies-work/supr-design-system/components/atoms/Text";
 
 interface SelectFieldProps {
   label: string;

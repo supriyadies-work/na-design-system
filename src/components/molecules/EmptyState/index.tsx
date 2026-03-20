@@ -2,10 +2,10 @@
 
 import React from "react";
 import { useTheme } from "next-themes";
-import { Text } from "@na-design-system/components/atoms/Text";
-import { Button } from "@na-design-system/components/atoms/Button";
-import { Image } from "@na-design-system/components/atoms/Image";
-import { cn } from "@na-design-system/utils/cn";
+import { Text } from "@supriyadies-work/supr-design-system/components/atoms/Text";
+import { Button } from "@supriyadies-work/supr-design-system/components/atoms/Button";
+import { Image } from "@supriyadies-work/supr-design-system/components/atoms/Image";
+import { cn } from "@supriyadies-work/supr-design-system/utils/cn";
 
 interface EmptyStateProps {
   title: string;

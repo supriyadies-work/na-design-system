@@ -2,7 +2,7 @@
 
 import React from "react";
 import NextImage from "next/image";
-import { cn } from "@na-design-system/utils/cn";
+import { cn } from "@supriyadies-work/supr-design-system/utils/cn";
 
 interface ImageProps {
   src: string;

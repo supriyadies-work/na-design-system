@@ -18,6 +18,75 @@ import LinkEditorModal from "@/components/molecules/Modal/LinkEditorModal";
 import "react-quill-new/dist/quill.snow.css";
 import Delta from "quill-delta";
 
+// Compress an image file on the client so its size is below maxBytes.
+// Keeps original dimensions and adjusts JPEG/WebP quality.
+async function compressImageFile(file: File, maxBytes: number): Promise<File> {
+  if (typeof window === "undefined") return file;
+  if (!file.type.startsWith("image/")) return file;
+  if (file.size <= maxBytes) return file;
+
+  const imageUrl = URL.createObjectURL(file);
+
+  try {
+    const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const image = new Image();
+      image.onload = () => resolve(image);
+      image.onerror = (err) => reject(err);
+      image.src = imageUrl;
+    });
+
+    const canvas = document.createElement("canvas");
+    canvas.width = img.naturalWidth || img.width;
+    canvas.height = img.naturalHeight || img.height;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return file;
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+    const ratio = maxBytes / file.size;
+    let quality = Math.min(0.92, Math.max(0.4, ratio));
+
+    const blob: Blob | null = await new Promise((resolve) =>
+      canvas.toBlob(
+        (b) => resolve(b),
+        file.type === "image/png" || file.type === "image/webp"
+          ? "image/webp"
+          : "image/jpeg",
+        quality
+      )
+    );
+
+    if (!blob) return file;
+
+    let finalBlob = blob;
+    if (finalBlob.size > maxBytes) {
+      const secondQuality = Math.max(0.25, quality * 0.7);
+      const secondBlob: Blob | null = await new Promise((resolve) =>
+        canvas.toBlob(
+          (b) => resolve(b),
+          file.type === "image/png" || file.type === "image/webp"
+            ? "image/webp"
+            : "image/jpeg",
+          secondQuality
+        )
+      );
+      if (secondBlob && secondBlob.size < finalBlob.size) {
+        finalBlob = secondBlob;
+      }
+    }
+
+    if (finalBlob.size > maxBytes) {
+      return file;
+    }
+
+    return new File([finalBlob], file.name, {
+      type: finalBlob.type || file.type,
+      lastModified: Date.now(),
+    });
+  } finally {
+    URL.revokeObjectURL(imageUrl);
+  }
+}
+
 // Store Quill from react-quill-new when it loads (Quill 2 doesn't use __quill on DOM)
 let QuillClass: { find: (el: HTMLElement) => any } | null = null;
 
@@ -1008,16 +1077,28 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
         const file = input.files?.[0];
         if (!file) return;
 
-        // Validate file size (max 5MB)
-        if (file.size > 5 * 1024 * 1024) {
-          alert("Image size must be less than 5MB");
-          return;
-        }
-
         // Validate file type
         if (!file.type?.startsWith("image/")) {
           alert("Please select an image file");
           return;
+        }
+
+        const MAX_BYTES = 5 * 1024 * 1024;
+        let workingFile = file;
+
+        if (file.size > MAX_BYTES) {
+          try {
+            workingFile = await compressImageFile(file, MAX_BYTES);
+          } catch (err) {
+            console.error("Error compressing editor image:", err);
+            alert("Failed to compress image file");
+            return;
+          }
+
+          if (workingFile.size > MAX_BYTES) {
+            alert("Image size must be less than 5MB even after compression");
+            return;
+          }
         }
 
         try {
@@ -1036,7 +1117,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
             // Create pending image object with data URL
             const pendingImage: PendingImage = {
               id: imageId,
-              file,
+              file: workingFile,
               previewUrl: dataUrl,
             } as PendingImage;
 

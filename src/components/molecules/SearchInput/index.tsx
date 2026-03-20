@@ -1,7 +1,7 @@
 import React from "react";
-import { Input } from "@na-design-system/components/atoms/Input";
-import { Icon } from "@na-design-system/components/atoms/Icon";
-import { cn } from "@na-design-system/utils/cn";
+import { Input } from "@supriyadies-work/supr-design-system/components/atoms/Input";
+import { Icon } from "@supriyadies-work/supr-design-system/components/atoms/Icon";
+import { cn } from "@supriyadies-work/supr-design-system/utils/cn";
 
 interface SearchInputProps {
   value: string;

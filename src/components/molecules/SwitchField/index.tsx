@@ -1,6 +1,6 @@
 import React from "react";
-import { Switch } from "@na-design-system/components/atoms/Switch";
-import { Text } from "@na-design-system/components/atoms/Text";
+import { Switch } from "@supriyadies-work/supr-design-system/components/atoms/Switch";
+import { Text } from "@supriyadies-work/supr-design-system/components/atoms/Text";
 
 interface SwitchFieldProps {
   label: string;

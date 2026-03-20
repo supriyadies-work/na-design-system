@@ -1,7 +1,7 @@
 import React, { ReactNode } from "react";
 import Link from "next/link";
-import { Navigation } from "@na-design-system/components/organisms/Navigation";
-import { cn } from "@na-design-system/utils/cn";
+import { Navigation } from "@supriyadies-work/supr-design-system/components/organisms/Navigation";
+import { cn } from "@supriyadies-work/supr-design-system/utils/cn";
 
 interface MenuItem {
   id: string;
