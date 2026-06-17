@@ -1,6 +1,6 @@
 "use client";
 
-import React, { ReactNode, useState, useEffect } from "react";
+import React, { ReactNode, useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 import { cn } from "@supriyadies-work/supr-design-system/utils/cn";
 
@@ -27,6 +27,135 @@ export interface SidebarFooterItem {
   onMouseEnter?: () => void;
   onFocus?: () => void;
   variant?: "default" | "error";
+}
+
+function SidebarCollapsedGroupFlyout({
+  item,
+  isActive,
+}: {
+  item: SidebarMenuItem;
+  isActive: (path: string, exact?: boolean) => boolean;
+}) {
+  const children = item.children ?? [];
+  const hasActiveChild = children.some((c) => c.path && isActive(c.path, c.exact));
+  const [open, setOpen] = useState(false);
+  const [position, setPosition] = useState({ top: 0, left: 0 });
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const flyoutRef = useRef<HTMLDivElement>(null);
+
+  const updatePosition = useCallback(() => {
+    const rect = triggerRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    setPosition({ top: rect.top, left: rect.right + 8 });
+  }, []);
+
+  useEffect(() => {
+    if (!open) return;
+
+    updatePosition();
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setOpen(false);
+    };
+    const onPointerDown = (event: MouseEvent) => {
+      const target = event.target as Node;
+      if (
+        triggerRef.current?.contains(target) ||
+        flyoutRef.current?.contains(target)
+      ) {
+        return;
+      }
+      setOpen(false);
+    };
+
+    window.addEventListener("keydown", onKeyDown);
+    window.addEventListener("mousedown", onPointerDown);
+    window.addEventListener("resize", updatePosition);
+    window.addEventListener("scroll", updatePosition, true);
+
+    return () => {
+      window.removeEventListener("keydown", onKeyDown);
+      window.removeEventListener("mousedown", onPointerDown);
+      window.removeEventListener("resize", updatePosition);
+      window.removeEventListener("scroll", updatePosition, true);
+    };
+  }, [open, updatePosition]);
+
+  const icon =
+    typeof item.icon === "string" ? (
+      <span className="text-xl">{item.icon}</span>
+    ) : (
+      item.icon
+    );
+
+  return (
+    <div key={item.id} className="flex justify-center py-2">
+      <button
+        ref={triggerRef}
+        type="button"
+        className={cn(
+          "p-2 rounded-lg transition-colors",
+          hasActiveChild || open
+            ? "bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400"
+            : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+        )}
+        aria-label={item.label}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        title={item.label}
+        onClick={() => {
+          updatePosition();
+          setOpen((prev) => !prev);
+        }}
+        onMouseEnter={item.onMouseEnter}
+        onFocus={item.onFocus}
+      >
+        {icon}
+      </button>
+      {open && (
+        <div
+          ref={flyoutRef}
+          role="menu"
+          aria-label={item.label}
+          className="fixed z-[200] min-w-[12rem] rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-lg py-1"
+          style={{ top: position.top, left: position.left }}
+        >
+          <div className="px-3 py-2 text-xs font-semibold text-gray-500 dark:text-gray-400 border-b border-gray-100 dark:border-gray-700">
+            {item.label}
+          </div>
+          {children.map((child) => {
+            if (!child.path) return null;
+            const active = isActive(child.path, child.exact);
+            return (
+              <Link
+                key={child.id}
+                href={child.path}
+                role="menuitem"
+                className={cn(
+                  "flex items-center gap-2 px-3 py-2 text-sm transition-colors",
+                  active
+                    ? "bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400"
+                    : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                )}
+                onClick={() => {
+                  child.onClick?.();
+                  setOpen(false);
+                }}
+                onMouseEnter={child.onMouseEnter}
+                onFocus={child.onFocus}
+              >
+                {typeof child.icon === "string" ? (
+                  <span className="text-base">{child.icon}</span>
+                ) : (
+                  child.icon
+                )}
+                <span className="font-medium">{child.label}</span>
+              </Link>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
 }
 
 function SidebarCollapsibleGroup({
@@ -93,13 +222,7 @@ function SidebarCollapsibleGroup({
 
   if (!sidebarOpen) {
     return (
-      <div key={item.id} className="flex justify-center py-2" title={item.label}>
-        {typeof item.icon === "string" ? (
-          <span className="text-xl">{item.icon}</span>
-        ) : (
-          item.icon
-        )}
-      </div>
+      <SidebarCollapsedGroupFlyout item={item} isActive={isActive} />
     );
   }
 
