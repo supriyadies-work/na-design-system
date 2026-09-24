@@ -1,0 +1,54 @@
+{
+  "suprcircle": {
+    "color": {
+      "surface": {
+        "canvas": { "value": "{suprcircle.color.primitive.neutral.f7f8fd}", "type": "color" },
+        "header": { "value": "{suprcircle.color.primitive.neutral.fafbfe}", "type": "color" },
+        "card": { "value": "{suprcircle.color.primitive.neutral.ffffff}", "type": "color" },
+        "subtle": { "value": "{suprcircle.color.primitive.blue.eef2ff}", "type": "color" }
+      },
+      "content": {
+        "primary": { "value": "{suprcircle.color.primitive.neutral.101a16}", "type": "color" },
+        "secondary": { "value": "{suprcircle.color.primitive.neutral.4d5752}", "type": "color" },
+        "onPrimary": { "value": "{suprcircle.color.primitive.neutral.ffffff}", "type": "color" }
+      },
+      "outline": {
+        "default": { "value": "{suprcircle.color.primitive.neutral.e7eaf0}", "type": "color" },
+        "subtle": { "value": "{suprcircle.color.primitive.neutral.edf0f4}", "type": "color" }
+      },
+      "shadow": {
+        "card": { "value": "{suprcircle.color.primitive.neutral.dfe1e8}", "type": "color" },
+        "nav": { "value": "{suprcircle.color.primitive.neutral.e9eaf0}", "type": "color" }
+      },
+      "action": {
+        "primary": {
+          "background": { "value": "{suprcircle.color.primitive.green.00472e}", "type": "color" },
+          "foreground": { "value": "{suprcircle.color.primitive.neutral.ffffff}", "type": "color" },
+          "container": { "value": "{suprcircle.color.primitive.mint.c9f3dc}", "type": "color" },
+          "onContainer": { "value": "{suprcircle.color.primitive.green.075237}", "type": "color" }
+        },
+        "secondary": {
+          "background": { "value": "{suprcircle.color.primitive.warm.ad4025}", "type": "color" },
+          "foreground": { "value": "{suprcircle.color.primitive.neutral.ffffff}", "type": "color" }
+        }
+      },
+      "feedback": {
+        "success": {
+          "container": { "value": "{suprcircle.color.primitive.mint.eaf9f1}", "type": "color" },
+          "foreground": { "value": "{suprcircle.color.primitive.green.075237}", "type": "color" }
+        },
+        "info": {
+          "container": { "value": "{suprcircle.color.primitive.blue.eef2ff}", "type": "color" },
+          "foreground": { "value": "{suprcircle.color.primitive.neutral.101a16}", "type": "color" }
+        },
+        "attention": {
+          "container": { "value": "{suprcircle.color.primitive.warm.ffe0d8}", "type": "color" },
+          "foreground": { "value": "{suprcircle.color.primitive.warm.8e2919}", "type": "color" }
+        }
+      },
+      "navigation": {
+        "active": { "value": "{suprcircle.color.primitive.green.004936}", "type": "color" }
+      }
+    }
+  }
+}

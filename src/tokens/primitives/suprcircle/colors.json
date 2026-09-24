@@ -1,0 +1,51 @@
+{
+  "suprcircle": {
+    "color": {
+      "primitive": {
+        "green": {
+          "002e21": { "value": "#002E21", "type": "color", "comment": "Deep green — Schedule" },
+          "00472e": { "value": "#00472E", "type": "color", "comment": "Primary CTA / identity" },
+          "004936": { "value": "#004936", "type": "color", "comment": "Active navigation label" },
+          "004c36": { "value": "#004C36", "type": "color", "comment": "Schedule/location action" },
+          "004d37": { "value": "#004D37", "type": "color", "comment": "Schedule green variant" },
+          "064d35": { "value": "#064D35", "type": "color", "comment": "Header/avatar green" },
+          "075237": { "value": "#075237", "type": "color", "comment": "Foreground on soft mint" }
+        },
+        "mint": {
+          "baf1d4": { "value": "#BAF1D4", "type": "color", "comment": "Activity soft status" },
+          "bcefd4": { "value": "#BCEFD4", "type": "color", "comment": "Home/detail icon surface" },
+          "c9f3dc": { "value": "#C9F3DC", "type": "color", "comment": "Profile/activity selected surface" },
+          "c9f4df": { "value": "#C9F4DF", "type": "color", "comment": "Schedule status surface" },
+          "eaf9f1": { "value": "#EAF9F1", "type": "color", "comment": "Profile subtle green surface" }
+        },
+        "neutral": {
+          "090b0c": { "value": "#090B0C", "type": "color", "comment": "Home/detail ink — primitive only" },
+          "101a16": { "value": "#101A16", "type": "color", "comment": "Canonical primary content" },
+          "4d5154": { "value": "#4D5154", "type": "color", "comment": "Home/detail muted — primitive only" },
+          "4d5752": { "value": "#4D5752", "type": "color", "comment": "Canonical muted content" },
+          "ffffff": { "value": "#FFFFFF", "type": "color" },
+          "f7f8fd": { "value": "#F7F8FD", "type": "color", "comment": "Canvas" },
+          "fafbfe": { "value": "#FAFBFE", "type": "color", "comment": "Header/nav surface" },
+          "e7eaf0": { "value": "#E7EAF0", "type": "color", "comment": "Divider/outline" },
+          "dfe1e8": { "value": "#DFE1E8", "type": "color", "comment": "Card shadow/border" },
+          "edf0f4": { "value": "#EDF0F4", "type": "color", "comment": "Subtle divider/shadow" },
+          "e9eaf0": { "value": "#E9EAF0", "type": "color", "comment": "Bottom nav / sticky action shadow" }
+        },
+        "blue": {
+          "dfe9fa": { "value": "#DFE9FA", "type": "color" },
+          "eef2ff": { "value": "#EEF2FF", "type": "color" },
+          "f0f3ff": { "value": "#F0F3FF", "type": "color" }
+        },
+        "warm": {
+          "ff917b": { "value": "#FF917B", "type": "color" },
+          "ffd7cc": { "value": "#FFD7CC", "type": "color" },
+          "ffe0d8": { "value": "#FFE0D8", "type": "color" },
+          "ffd9c2": { "value": "#FFD9C2", "type": "color" },
+          "8e2919": { "value": "#8E2919", "type": "color" },
+          "9a2916": { "value": "#9A2916", "type": "color" },
+          "ad4025": { "value": "#AD4025", "type": "color" }
+        }
+      }
+    }
+  }
+}

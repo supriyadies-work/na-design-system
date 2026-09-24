@@ -1,0 +1,37 @@
+name: supr_design_system_flutter
+description: SuprCircle design tokens, ThemeExtensions, and light ThemeData for Flutter consumers.
+version: 0.1.0
+publish_to: none
+homepage: https://github.com/supriyadies-work/na-design-system
+repository: https://github.com/supriyadies-work/na-design-system
+issue_tracker: https://github.com/supriyadies-work/na-design-system/issues
+
+environment:
+  sdk: ">=3.3.0 <4.0.0"
+  flutter: ">=3.19.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+flutter:
+  uses-material-design: true
+  fonts:
+    - family: Lato
+      fonts:
+        - asset: assets/fonts/Lato-Light.ttf
+          weight: 300
+        - asset: assets/fonts/Lato-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/Lato-Italic.ttf
+          weight: 400
+          style: italic
+        - asset: assets/fonts/Lato-Bold.ttf
+          weight: 700
+        - asset: assets/fonts/Lato-Black.ttf
+          weight: 900

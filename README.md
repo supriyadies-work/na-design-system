@@ -1,8 +1,10 @@
 # @supriyadies-work/supr-design-system
 
-Design system package — design tokens, React components, and theme scales (nisaaulia / supriyadies / weddio / wedwise). Scalable per-brand theming with optional runtime assets (fonts, IcoMoon icons, tokens).
+Design system package — design tokens, React components, and theme scales (`nisaaulia` / `supriyadies` / `weddio` / `wedwise` / **`suprcircle`**). Scalable per-brand theming with optional runtime assets (fonts, IcoMoon icons, tokens).
 
-**Documentation & visual reference:** [nisaaulia.com/design-pattern](https://nisaaulia.com/design-pattern)
+**SuprCircle** is a **brand profile** (identity tokens + Flutter theme package), not an alias of the `supriyadies` 1.25 density multiplier. Flutter consumers: [`packages/supr_design_system_flutter`](packages/supr_design_system_flutter/README.md).
+
+**Documentation & visual reference:** [nisaaulia.com/design-pattern](https://nisaaulia.com/design-pattern) · SuprCircle normalization: [`docs/suprcircle/figma-normalization.md`](docs/suprcircle/figma-normalization.md)
 
 We’re open to feedback and improvements. Suggestions, issues, and pull requests are welcome.
 
@@ -151,20 +153,33 @@ import { cn, useScale, getScaleConfig } from "@supriyadies-work/supr-design-syst
 Theme scales supported:
 
 - **nisaaulia** — default
-- **supriyadies** — larger spacing/typography
+- **supriyadies** — larger spacing/typography (density multiplier 1.25)
 - **weddio** — per-scale color palette (and optional font/icon set) for Weddio (uses Wedwise token prefix for backward compatibility)
 - **wedwise** — legacy alias for Weddio scale (kept for backward compatibility)
+- **suprcircle** — brand profile (multiplier 1); Flutter theme package under `packages/supr_design_system_flutter` — **not** an alias of `supriyadies`
 
 Use `ScaleProvider` and `defaultScale` to choose a scale. For scalable theming (different fonts, colors, or icon set per brand), pass `fontsManifestUrl`, `iconSelectionUrl`, and/or `tokensUrl` so the design system loads your assets at runtime.
+
+### SuprCircle / Flutter
+
+```bash
+npm run build:flutter-tokens   # Generate Dart tokens
+npm run check:flutter-tokens   # Fail if generated files drift
+npm run test:flutter-package   # format + analyze + test
+npm run validate:suprcircle    # web tokens + flutter gates
+```
+
+Pin Flutter consumers to a Git tag + `path: packages/supr_design_system_flutter` (see package README). Light theme only until dark is designed.
 
 ---
 
 ## Development scripts
 
 ```bash
-npm run build          # Full build (tokens + compile + assets + docs)
+npm run build          # Full build (tokens + flutter tokens + compile + assets + docs)
 npm run build:watch    # Watch tokens
-npm run build:tokens   # Style Dictionary only
+npm run build:tokens   # Style Dictionary (web) only
+npm run build:flutter-tokens
 npm run build:docs     # Generate docs metadata
 ```
 

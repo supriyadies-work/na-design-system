@@ -1,0 +1,91 @@
+{
+  "suprcircle": {
+    "font": {
+      "family": {
+        "primary": {
+          "value": "Lato",
+          "type": "fontFamilies",
+          "comment": "Canonical SuprCircle v1; fallback: system-ui, Segoe UI, Roboto, Helvetica Neue, Arial, sans-serif"
+        },
+        "fallback": {
+          "value": "system-ui, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif",
+          "type": "fontFamilies",
+          "comment": "Safe Indonesian/Latin fallback stack"
+        }
+      }
+    },
+    "typography": {
+      "display": {
+        "fontSize": { "value": "29", "type": "dimension" },
+        "lineHeight": { "value": "35", "type": "dimension" },
+        "fontWeight": { "value": "900", "type": "fontWeights" }
+      },
+      "headlineLarge": {
+        "fontSize": { "value": "24", "type": "dimension" },
+        "lineHeight": { "value": "29", "type": "dimension" },
+        "fontWeight": { "value": "900", "type": "fontWeights" }
+      },
+      "headlineMedium": {
+        "fontSize": { "value": "23", "type": "dimension" },
+        "lineHeight": { "value": "28", "type": "dimension" },
+        "fontWeight": { "value": "700", "type": "fontWeights" }
+      },
+      "titleLarge": {
+        "fontSize": { "value": "20", "type": "dimension" },
+        "lineHeight": { "value": "24", "type": "dimension" },
+        "fontWeight": { "value": "700", "type": "fontWeights" }
+      },
+      "titleMedium": {
+        "fontSize": { "value": "18", "type": "dimension" },
+        "lineHeight": { "value": "22", "type": "dimension" },
+        "fontWeight": { "value": "700", "type": "fontWeights" }
+      },
+      "titleSmall": {
+        "fontSize": { "value": "16", "type": "dimension" },
+        "lineHeight": { "value": "20", "type": "dimension" },
+        "fontWeight": { "value": "700", "type": "fontWeights" }
+      },
+      "bodyLarge": {
+        "fontSize": { "value": "14", "type": "dimension" },
+        "lineHeight": { "value": "21", "type": "dimension" },
+        "fontWeight": { "value": "400", "type": "fontWeights" }
+      },
+      "bodyMedium": {
+        "fontSize": { "value": "13", "type": "dimension" },
+        "lineHeight": { "value": "19.5", "type": "dimension" },
+        "fontWeight": { "value": "400", "type": "fontWeights" }
+      },
+      "bodySmall": {
+        "fontSize": { "value": "12", "type": "dimension" },
+        "lineHeight": { "value": "18", "type": "dimension" },
+        "fontWeight": { "value": "400", "type": "fontWeights" }
+      },
+      "labelLarge": {
+        "fontSize": { "value": "11", "type": "dimension" },
+        "lineHeight": { "value": "14", "type": "dimension" },
+        "fontWeight": { "value": "700", "type": "fontWeights" }
+      },
+      "labelMedium": {
+        "fontSize": { "value": "10", "type": "dimension" },
+        "lineHeight": { "value": "13", "type": "dimension" },
+        "fontWeight": { "value": "400", "type": "fontWeights" }
+      },
+      "labelMediumEmphasized": {
+        "fontSize": { "value": "10", "type": "dimension" },
+        "lineHeight": { "value": "13", "type": "dimension" },
+        "fontWeight": { "value": "700", "type": "fontWeights" }
+      },
+      "labelSmall": {
+        "fontSize": { "value": "9", "type": "dimension" },
+        "lineHeight": { "value": "11", "type": "dimension" },
+        "fontWeight": { "value": "400", "type": "fontWeights" }
+      },
+      "labelMicro": {
+        "fontSize": { "value": "8", "type": "dimension" },
+        "lineHeight": { "value": "10", "type": "dimension" },
+        "fontWeight": { "value": "400", "type": "fontWeights" },
+        "comment": "Restricted to non-critical compact metadata/navigation caption"
+      }
+    }
+  }
+}

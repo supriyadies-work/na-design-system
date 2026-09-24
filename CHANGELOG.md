@@ -5,6 +5,20 @@ All notable changes to supr-design-system will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.7.0] - Unreleased
+
+### Added
+
+- **SuprCircle** brand profile tokens (`src/tokens/primitives|brands/suprcircle`) with primitive + semantic tiers.
+- Flutter package `packages/supr_design_system_flutter` — typed tokens, ThemeExtensions, `SuprCircleTheme.light()`, bundled Lato (OFL).
+- Docs: `docs/suprcircle/figma-normalization.md`, `components.md`, asset manifest schema.
+- Scripts: `build:flutter-tokens`, `check:flutter-tokens`, `test:flutter-package`, `validate:suprcircle`.
+
+### Notes
+
+- `suprcircle` is not an alias of the `supriyadies` 1.25 density scale.
+- Dark theme is not designed yet.
+
 ## [1.6.0] - 2026-03-28
 
 ### Added

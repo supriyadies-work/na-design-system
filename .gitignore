@@ -19,3 +19,10 @@ node_modules/
 
 # Project MCP with live Bearer (generated locally from credentials)
 .cursor/mcp.json
+
+# Flutter
+packages/**/.dart_tool/
+packages/**/build/
+packages/**/.flutter-plugins
+packages/**/.flutter-plugins-dependencies
+packages/**/pubspec.lock

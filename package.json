@@ -41,9 +41,14 @@
     "supr-design-system-init": "./scripts/init-consumer.js"
   },
   "scripts": {
-    "build": "npm run build:tokens && npm run build:compile && npm run build:resolve-aliases && npm run build:copy-assets && npm run build:docs",
+    "build": "npm run build:tokens && npm run build:flutter-tokens && npm run build:compile && npm run build:resolve-aliases && npm run build:copy-assets && npm run build:docs",
     "build:docs": "node scripts/generate-docs-metadata.js",
     "build:tokens": "style-dictionary build --config src/config/style-dictionary.config.js",
+    "build:flutter-tokens": "node scripts/generate-flutter-tokens.js",
+    "check:flutter-tokens": "npm run build:flutter-tokens && (cd packages/supr_design_system_flutter && dart format lib/src/generated) && git diff --exit-code -- packages/supr_design_system_flutter/lib/src/generated/",
+    "check:flutter-literals": "bash scripts/check-flutter-no-raw-literals.sh",
+    "test:flutter-package": "cd packages/supr_design_system_flutter && dart format --output=none --set-exit-if-changed . && flutter analyze && flutter test",
+    "validate:suprcircle": "npm run build:tokens && npm run build:flutter-tokens && npm run check:flutter-tokens && npm run check:flutter-literals && npm run test:flutter-package",
     "build:compile": "tsc || true",
     "build:resolve-aliases": "tsc-alias",
     "build:copy-assets": "node scripts/copy-assets.js",

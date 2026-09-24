@@ -1,0 +1,15 @@
+name: supr_design_system_flutter_example
+publish_to: none
+version: 0.1.0
+
+environment:
+  sdk: ">=3.3.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  supr_design_system_flutter:
+    path: ../
+
+flutter:
+  uses-material-design: true

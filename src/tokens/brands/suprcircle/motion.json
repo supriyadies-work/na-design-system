@@ -1,0 +1,29 @@
+{
+  "suprcircle": {
+    "motion": {
+      "duration": {
+        "instant": { "value": "0", "type": "duration", "comment": "ms" },
+        "short": { "value": "120", "type": "duration", "comment": "ms" },
+        "medium": { "value": "200", "type": "duration", "comment": "ms" },
+        "long": { "value": "320", "type": "duration", "comment": "ms" }
+      },
+      "curve": {
+        "standard": {
+          "value": [0.4, 0.0, 0.2, 1],
+          "type": "cubicBezier",
+          "comment": "Standard interaction"
+        },
+        "enter": {
+          "value": [0.0, 0.0, 0.2, 1],
+          "type": "cubicBezier",
+          "comment": "Enter / decelerate"
+        },
+        "exit": {
+          "value": [0.4, 0.0, 1, 1],
+          "type": "cubicBezier",
+          "comment": "Exit / accelerate"
+        }
+      }
+    }
+  }
+}
