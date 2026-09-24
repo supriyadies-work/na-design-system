@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "supr-context-remote": {
+      "url": "https://context.supriyadies.work/mcp",
+      "headers": {
+        "Authorization": "Bearer <apiKey from .supr-context-credentials.json>"
+      }
+    }
+  }
+}

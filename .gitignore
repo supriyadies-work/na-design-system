@@ -8,4 +8,14 @@ node_modules/
 *.log
 .DS_Store
 
-.env.local
+# Local / secrets — never push
+.env
+.env.*
+!.env*.example
+.npmrc.local
+*-credentials.json
+.*-credentials.json
+.supr-context-credentials.json
+
+# Project MCP with live Bearer (generated locally from credentials)
+.cursor/mcp.json
