@@ -1,5 +1,11 @@
 module.exports = {
-  source: ["src/tokens/**/*.json"],
+  // Exclude SuprCircle brand/primitives — generated via style-dictionary.flutter.config.js
+  source: [
+    "src/tokens/base/**/*.json",
+    "src/tokens/semantic/**/*.json",
+    "src/tokens/scales/**/*.json",
+    "src/tokens/themes/**/*.json",
+  ],
   platforms: {
     css: {
       transformGroup: "css",

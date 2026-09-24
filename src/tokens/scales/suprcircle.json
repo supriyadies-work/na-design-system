@@ -1,0 +1,9 @@
+{
+  "scale": {
+    "name": { "value": "suprcircle" },
+    "multiplier": { "value": "1" },
+    "description": {
+      "value": "SuprCircle brand profile — not a density scale; use brands/suprcircle semantic tokens"
+    }
+  }
+}

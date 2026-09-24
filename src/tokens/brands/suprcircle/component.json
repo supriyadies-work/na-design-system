@@ -1,0 +1,80 @@
+{
+  "suprcircle": {
+    "component": {
+      "card": {
+        "radius": { "value": "{suprcircle.dimension.radius.10}", "type": "dimension" },
+        "padding": { "value": "{suprcircle.dimension.space.13}", "type": "dimension" },
+        "paddingCompact": { "value": "{suprcircle.dimension.space.12}", "type": "dimension" },
+        "paddingRoomy": { "value": "{suprcircle.dimension.space.20}", "type": "dimension" }
+      },
+      "memberCard": {
+        "radius": { "value": "{suprcircle.dimension.radius.11}", "type": "dimension" }
+      },
+      "chip": {
+        "radius": { "value": "{suprcircle.dimension.radius.14}", "type": "dimension" }
+      },
+      "cta": {
+        "radius": { "value": "{suprcircle.dimension.radius.24}", "type": "dimension" },
+        "height": { "value": "{suprcircle.dimension.space.46}", "type": "dimension" },
+        "heightCompact": { "value": "{suprcircle.dimension.space.40}", "type": "dimension" }
+      },
+      "page": {
+        "paddingX": { "value": "{suprcircle.dimension.space.14}", "type": "dimension" },
+        "paddingXCompact": { "value": "{suprcircle.dimension.space.13}", "type": "dimension" },
+        "gap": { "value": "{suprcircle.dimension.space.8}", "type": "dimension" },
+        "sectionGap": { "value": "{suprcircle.dimension.space.14}", "type": "dimension" }
+      },
+      "header": {
+        "height": { "value": "{suprcircle.dimension.space.57}", "type": "dimension" }
+      },
+      "bottomNav": {
+        "height": { "value": "{suprcircle.dimension.space.73}", "type": "dimension" }
+      },
+      "touch": {
+        "minTarget": { "value": "{suprcircle.dimension.space.44}", "type": "dimension" }
+      }
+    },
+    "shadow": {
+      "card": {
+        "value": {
+          "color": "{suprcircle.color.primitive.neutral.dfe1e8}",
+          "offsetX": "0",
+          "offsetY": "1",
+          "blur": "3",
+          "spread": "0"
+        },
+        "type": "shadow"
+      },
+      "cardSubtle": {
+        "value": {
+          "color": "{suprcircle.color.primitive.neutral.edf0f4}",
+          "offsetX": "0",
+          "offsetY": "1",
+          "blur": "1",
+          "spread": "0"
+        },
+        "type": "shadow"
+      },
+      "bottomNav": {
+        "value": {
+          "color": "{suprcircle.color.primitive.neutral.e9eaf0}",
+          "offsetX": "0",
+          "offsetY": "-3",
+          "blur": "6",
+          "spread": "0"
+        },
+        "type": "shadow"
+      },
+      "stickyAction": {
+        "value": {
+          "color": "{suprcircle.color.primitive.neutral.e9eaf0}",
+          "offsetX": "0",
+          "offsetY": "-3",
+          "blur": "12",
+          "spread": "0"
+        },
+        "type": "shadow"
+      }
+    }
+  }
+}

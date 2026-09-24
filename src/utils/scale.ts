@@ -6,7 +6,13 @@
  */
 
 /** Known scales get autocomplete; any string is allowed for client-defined scales */
-export type ScaleName = "nisaaulia" | "supriyadies" | "weddio" | "wedwise" | (string & {});
+export type ScaleName =
+  | "nisaaulia"
+  | "supriyadies"
+  | "weddio"
+  | "wedwise"
+  | "suprcircle"
+  | (string & {});
 
 export interface ScaleConfig {
   name: string;
@@ -27,7 +33,12 @@ export interface ScaleConfig {
 }
 
 /** Predefined scale keys (used for typed scales object; dynamic scales are not listed) */
-export type KnownScaleName = "nisaaulia" | "supriyadies" | "weddio" | "wedwise";
+export type KnownScaleName =
+  | "nisaaulia"
+  | "supriyadies"
+  | "weddio"
+  | "wedwise"
+  | "suprcircle";
 
 /**
  * Scale configurations (predefined). Dynamic scale names use auto-generated config via getScaleConfigFor().
@@ -72,6 +83,18 @@ export const scales: Record<KnownScaleName, ScaleConfig> = {
     borderRadiusMultiplier: 1,
     description: "Wedwise brand scale - use colorTokenPrefix or colorOverrides for brand palette",
     colorTokenPrefix: "color-by-scale-wedwise",
+  },
+  /** Brand profile for SuprCircle — density multiplier 1 (not an alias of supriyadies 1.25). */
+  suprcircle: {
+    name: "suprcircle",
+    multiplier: 1,
+    spacingMultiplier: 1,
+    fontSizeMultiplier: 1,
+    lineHeightMultiplier: 1,
+    borderRadiusMultiplier: 1,
+    description:
+      "SuprCircle brand profile — identity tokens live under brands/suprcircle; no density multiplication",
+    fontFamily: { primary: "Lato" },
   },
 };
 

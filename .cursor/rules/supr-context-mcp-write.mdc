@@ -1,0 +1,46 @@
+---
+description: When and how to write family context via supr-context MCP from this laptop
+alwaysApply: true
+---
+
+# Supr-context MCP write (na-design-system @ Petrov.local)
+
+PostgreSQL via `supr-context` is the source of truth. Chat memory never overrides it.
+
+## Endpoint / identity
+
+- Prefer project MCP **`supr-context-remote`** → `https://context.supriyadies.work/mcp`
+- This repo’s ApiClient instance: **`cursor-na-design-system`** (principal `cursor`)
+- Local secret file (gitignored, mode 0600): `.supr-context-credentials.json`
+- Local MCP config (gitignored): `.cursor/mcp.json` — generate from credentials; see `.cursor/mcp.json.example`
+- Never commit API keys, credentials JSON, `.env*`, or live `.cursor/mcp.json`
+- Instance identity comes from the Bearer key. Never send `apiClientId`, `clientInstanceId`, or internal `sess_…`
+
+## When to write
+
+Only when the user explicitly wants something durable, e.g. “Remember…”, “Record this decision…”, “Update our position…”, or clear approval after you propose a write.
+
+## When not to write
+
+Casual chat, brainstorming, speculative ideas, temporary notes, invented facts, or overwriting truth without supersession.
+
+## Tool map
+
+| Intent | Tool |
+|--------|------|
+| Fact / preference / summary / observation | `context_remember` |
+| Canonical decision | `context_record_decision` |
+| Point-in-time event | `context_record_event` |
+
+Read first with `context_resolve` (broad) or `context_search` / `context_get` (targeted).
+
+## Supersession
+
+1. Resolve or get the current `recordId`
+2. Write with `supersedes: <recordId>` — no parallel conflicting truths
+
+## Provenance / actor
+
+- `provider: cursor`, `surface: cursor-ide`
+- Truth actor usually `actorSlug: heru` (HUMAN who owns the statement)
+- Never expose API keys in replies

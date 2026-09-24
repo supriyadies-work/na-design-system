@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://supriyadies.work/schemas/suprcircle-asset-manifest.json",
+  "title": "SuprCircleAssetManifest",
+  "type": "object",
+  "required": ["version", "assets"],
+  "properties": {
+    "version": { "type": "integer", "minimum": 1 },
+    "assets": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "figmaFileKey",
+          "figmaNodeId",
+          "type",
+          "destination",
+          "license",
+          "checksumSha256",
+          "themes",
+          "accessibility"
+        ],
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "figmaFileKey": { "type": "string", "minLength": 1 },
+          "figmaNodeId": { "type": "string", "pattern": "^\\d+:\\d+$" },
+          "type": { "enum": ["svg", "raster", "font", "illustration"] },
+          "destination": { "type": "string", "minLength": 1 },
+          "width": { "type": "number" },
+          "height": { "type": "number" },
+          "aspectRatio": { "type": "number" },
+          "license": { "type": "string" },
+          "sourceUrl": { "type": "string" },
+          "checksumSha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+          "themes": {
+            "type": "array",
+            "items": { "type": "string" },
+            "minItems": 1
+          },
+          "accessibility": { "enum": ["decorative", "semantic"] }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}
