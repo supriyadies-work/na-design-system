@@ -63,6 +63,14 @@ void main() {
       greaterThanOrEqualTo(4.5),
     );
     expect(
+      contrastRatio(c.feedbackPaidForeground, c.feedbackPaidContainer),
+      greaterThanOrEqualTo(4.5),
+    );
+    expect(
+      contrastRatio(c.contentPoints, c.surfaceCard),
+      greaterThanOrEqualTo(4.5),
+    );
+    expect(
       contrastRatio(c.actionSecondaryForeground, c.actionSecondaryBackground),
       greaterThanOrEqualTo(3.0),
     );

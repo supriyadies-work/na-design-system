@@ -29,6 +29,10 @@ class SuprColors extends ThemeExtension<SuprColors> {
     required this.feedbackInfoForeground,
     required this.feedbackAttentionContainer,
     required this.feedbackAttentionForeground,
+    required this.feedbackPaidContainer,
+    required this.feedbackPaidForeground,
+    required this.contentPoints,
+    required this.contentPointsAccent,
     required this.navigationActive,
     required this.surfaceNotice,
     required this.surfaceMint,
@@ -71,6 +75,13 @@ class SuprColors extends ThemeExtension<SuprColors> {
             SuprCircleTokens.suprcircle_color_feedback_attention_container,
         feedbackAttentionForeground:
             SuprCircleTokens.suprcircle_color_feedback_attention_foreground,
+        feedbackPaidContainer:
+            SuprCircleTokens.suprcircle_color_feedback_paid_container,
+        feedbackPaidForeground:
+            SuprCircleTokens.suprcircle_color_feedback_paid_foreground,
+        contentPoints: SuprCircleTokens.suprcircle_color_content_points,
+        contentPointsAccent:
+            SuprCircleTokens.suprcircle_color_content_pointsAccent,
         navigationActive: SuprCircleTokens.suprcircle_color_navigation_active,
         surfaceNotice: SuprCircleTokens.suprcircle_color_primitive_warm_ffd9c2,
         surfaceMint: SuprCircleTokens.suprcircle_color_primitive_mint_bcefd4,
@@ -100,6 +111,10 @@ class SuprColors extends ThemeExtension<SuprColors> {
   final Color feedbackInfoForeground;
   final Color feedbackAttentionContainer;
   final Color feedbackAttentionForeground;
+  final Color feedbackPaidContainer;
+  final Color feedbackPaidForeground;
+  final Color contentPoints;
+  final Color contentPointsAccent;
   final Color navigationActive;
   final Color surfaceNotice;
   final Color surfaceMint;
@@ -137,6 +152,10 @@ class SuprColors extends ThemeExtension<SuprColors> {
     Color? feedbackInfoForeground,
     Color? feedbackAttentionContainer,
     Color? feedbackAttentionForeground,
+    Color? feedbackPaidContainer,
+    Color? feedbackPaidForeground,
+    Color? contentPoints,
+    Color? contentPointsAccent,
     Color? navigationActive,
     Color? surfaceNotice,
     Color? surfaceMint,
@@ -178,6 +197,12 @@ class SuprColors extends ThemeExtension<SuprColors> {
           feedbackAttentionContainer ?? this.feedbackAttentionContainer,
       feedbackAttentionForeground:
           feedbackAttentionForeground ?? this.feedbackAttentionForeground,
+      feedbackPaidContainer:
+          feedbackPaidContainer ?? this.feedbackPaidContainer,
+      feedbackPaidForeground:
+          feedbackPaidForeground ?? this.feedbackPaidForeground,
+      contentPoints: contentPoints ?? this.contentPoints,
+      contentPointsAccent: contentPointsAccent ?? this.contentPointsAccent,
       navigationActive: navigationActive ?? this.navigationActive,
       surfaceNotice: surfaceNotice ?? this.surfaceNotice,
       surfaceMint: surfaceMint ?? this.surfaceMint,
@@ -247,6 +272,19 @@ class SuprColors extends ThemeExtension<SuprColors> {
         other.feedbackAttentionForeground,
         t,
       )!,
+      feedbackPaidContainer: Color.lerp(
+        feedbackPaidContainer,
+        other.feedbackPaidContainer,
+        t,
+      )!,
+      feedbackPaidForeground: Color.lerp(
+        feedbackPaidForeground,
+        other.feedbackPaidForeground,
+        t,
+      )!,
+      contentPoints: Color.lerp(contentPoints, other.contentPoints, t)!,
+      contentPointsAccent:
+          Color.lerp(contentPointsAccent, other.contentPointsAccent, t)!,
       navigationActive:
           Color.lerp(navigationActive, other.navigationActive, t)!,
       surfaceNotice: Color.lerp(surfaceNotice, other.surfaceNotice, t)!,

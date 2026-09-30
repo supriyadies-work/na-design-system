@@ -22,6 +22,8 @@ abstract final class SuprCircleTokens {
   static const Color suprcircle_color_action_secondary_foreground =
       Color(0xFFFFFFFF);
   static const Color suprcircle_color_content_onPrimary = Color(0xFFFFFFFF);
+  static const Color suprcircle_color_content_points = Color(0xFF9D2E17);
+  static const Color suprcircle_color_content_pointsAccent = Color(0xFFA52D19);
   static const Color suprcircle_color_content_primary = Color(0xFF101A16);
   static const Color suprcircle_color_content_secondary = Color(0xFF4D5752);
   static const Color suprcircle_color_feedback_attention_container =
@@ -32,6 +34,10 @@ abstract final class SuprCircleTokens {
       Color(0xFFEEF2FF);
   static const Color suprcircle_color_feedback_info_foreground =
       Color(0xFF101A16);
+  static const Color suprcircle_color_feedback_paid_container =
+      Color(0xFFC6EFD9);
+  static const Color suprcircle_color_feedback_paid_foreground =
+      Color(0xFF165941);
   static const Color suprcircle_color_feedback_success_container =
       Color(0xFFEAF9F1);
   static const Color suprcircle_color_feedback_success_foreground =
@@ -56,8 +62,11 @@ abstract final class SuprCircleTokens {
       Color(0xFF064D35);
   static const Color suprcircle_color_primitive_green_075237 =
       Color(0xFF075237);
+  static const Color suprcircle_color_primitive_green_165941 =
+      Color(0xFF165941);
   static const Color suprcircle_color_primitive_mint_baf1d4 = Color(0xFFBAF1D4);
   static const Color suprcircle_color_primitive_mint_bcefd4 = Color(0xFFBCEFD4);
+  static const Color suprcircle_color_primitive_mint_c6efd9 = Color(0xFFC6EFD9);
   static const Color suprcircle_color_primitive_mint_c9f3dc = Color(0xFFC9F3DC);
   static const Color suprcircle_color_primitive_mint_c9f4df = Color(0xFFC9F4DF);
   static const Color suprcircle_color_primitive_mint_eaf9f1 = Color(0xFFEAF9F1);
@@ -85,6 +94,8 @@ abstract final class SuprCircleTokens {
       Color(0xFFFFFFFF);
   static const Color suprcircle_color_primitive_warm_8e2919 = Color(0xFF8E2919);
   static const Color suprcircle_color_primitive_warm_9a2916 = Color(0xFF9A2916);
+  static const Color suprcircle_color_primitive_warm_9d2e17 = Color(0xFF9D2E17);
+  static const Color suprcircle_color_primitive_warm_a52d19 = Color(0xFFA52D19);
   static const Color suprcircle_color_primitive_warm_ad4025 = Color(0xFFAD4025);
   static const Color suprcircle_color_primitive_warm_ff917b = Color(0xFFFF917B);
   static const Color suprcircle_color_primitive_warm_ffd7cc = Color(0xFFFFD7CC);

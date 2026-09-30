@@ -10,7 +10,9 @@
       "content": {
         "primary": { "value": "{suprcircle.color.primitive.neutral.101a16}", "type": "color" },
         "secondary": { "value": "{suprcircle.color.primitive.neutral.4d5752}", "type": "color" },
-        "onPrimary": { "value": "{suprcircle.color.primitive.neutral.ffffff}", "type": "color" }
+        "onPrimary": { "value": "{suprcircle.color.primitive.neutral.ffffff}", "type": "color" },
+        "points": { "value": "{suprcircle.color.primitive.warm.9d2e17}", "type": "color" },
+        "pointsAccent": { "value": "{suprcircle.color.primitive.warm.a52d19}", "type": "color" }
       },
       "outline": {
         "default": { "value": "{suprcircle.color.primitive.neutral.e7eaf0}", "type": "color" },
@@ -44,6 +46,10 @@
         "attention": {
           "container": { "value": "{suprcircle.color.primitive.warm.ffe0d8}", "type": "color" },
           "foreground": { "value": "{suprcircle.color.primitive.warm.8e2919}", "type": "color" }
+        },
+        "paid": {
+          "container": { "value": "{suprcircle.color.primitive.mint.c6efd9}", "type": "color" },
+          "foreground": { "value": "{suprcircle.color.primitive.green.165941}", "type": "color" }
         }
       },
       "navigation": {
