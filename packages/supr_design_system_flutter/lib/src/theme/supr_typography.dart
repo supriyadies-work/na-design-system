@@ -7,6 +7,7 @@ TextStyle _style({
   required double height,
   required FontWeight weight,
   Color? color,
+  double letterSpacing = 0,
 }) {
   return TextStyle(
     fontFamily: SuprCircleTokens.suprcircle_font_family_primary,
@@ -21,13 +22,13 @@ TextStyle _style({
     fontSize: size,
     height: height / size,
     fontWeight: weight,
+    letterSpacing: letterSpacing,
     color: color,
-    // Prefer tabular figures when Lato supports them for numeric alignment.
     fontFeatures: const [FontFeature.tabularFigures()],
   );
 }
 
-/// Semantic Lato type scale. Do not invent per-widget sizes in feature code.
+/// Semantic type scale for the named SuprCircle frames. Feature widgets do not invent sizes.
 @immutable
 class SuprTypography extends ThemeExtension<SuprTypography> {
   const SuprTypography({
@@ -45,6 +46,8 @@ class SuprTypography extends ThemeExtension<SuprTypography> {
     required this.labelMediumEmphasized,
     required this.labelSmall,
     required this.labelMicro,
+    required this.sectionTitle,
+    required this.sessionTitle,
   });
 
   factory SuprTypography.light({Color? color}) {
@@ -136,6 +139,19 @@ class SuprTypography extends ThemeExtension<SuprTypography> {
         weight: SuprCircleTokens.suprcircle_typography_labelMicro_fontWeight,
         color: c,
       ),
+      sectionTitle: _style(
+        size: 15,
+        height: 18,
+        weight: FontWeight.w500,
+        color: c,
+      ),
+      sessionTitle: _style(
+        size: 22,
+        height: 26.4,
+        weight: FontWeight.w700,
+        letterSpacing: -0.6,
+        color: c,
+      ),
     );
   }
 
@@ -153,6 +169,8 @@ class SuprTypography extends ThemeExtension<SuprTypography> {
   final TextStyle labelMediumEmphasized;
   final TextStyle labelSmall;
   final TextStyle labelMicro;
+  final TextStyle sectionTitle;
+  final TextStyle sessionTitle;
 
   static SuprTypography of(BuildContext context) {
     final value = Theme.of(context).extension<SuprTypography>();
@@ -177,6 +195,8 @@ class SuprTypography extends ThemeExtension<SuprTypography> {
     TextStyle? labelMediumEmphasized,
     TextStyle? labelSmall,
     TextStyle? labelMicro,
+    TextStyle? sectionTitle,
+    TextStyle? sessionTitle,
   }) {
     return SuprTypography(
       display: display ?? this.display,
@@ -194,6 +214,8 @@ class SuprTypography extends ThemeExtension<SuprTypography> {
           labelMediumEmphasized ?? this.labelMediumEmphasized,
       labelSmall: labelSmall ?? this.labelSmall,
       labelMicro: labelMicro ?? this.labelMicro,
+      sectionTitle: sectionTitle ?? this.sectionTitle,
+      sessionTitle: sessionTitle ?? this.sessionTitle,
     );
   }
 
@@ -216,6 +238,8 @@ class SuprTypography extends ThemeExtension<SuprTypography> {
           labelMediumEmphasized, other.labelMediumEmphasized, t)!,
       labelSmall: TextStyle.lerp(labelSmall, other.labelSmall, t)!,
       labelMicro: TextStyle.lerp(labelMicro, other.labelMicro, t)!,
+      sectionTitle: TextStyle.lerp(sectionTitle, other.sectionTitle, t)!,
+      sessionTitle: TextStyle.lerp(sessionTitle, other.sessionTitle, t)!,
     );
   }
 }

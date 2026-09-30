@@ -230,7 +230,7 @@ abstract final class SuprCircleTokens {
 
   static const String suprcircle_font_family_fallback =
       'system-ui, \'Segoe UI\', Roboto, \'Helvetica Neue\', Arial, sans-serif';
-  static const String suprcircle_font_family_primary = 'Lato';
+  static const String suprcircle_font_family_primary = 'PlusJakartaSans';
 
   static const Cubic suprcircle_motion_curve_enter = Cubic(0, 0, 0.2, 1);
   static const Cubic suprcircle_motion_curve_exit = Cubic(0.4, 0, 1, 1);

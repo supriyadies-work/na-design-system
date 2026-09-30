@@ -30,6 +30,9 @@ class SuprColors extends ThemeExtension<SuprColors> {
     required this.feedbackAttentionContainer,
     required this.feedbackAttentionForeground,
     required this.navigationActive,
+    required this.surfaceNotice,
+    required this.surfaceMint,
+    required this.surfaceInset,
   });
 
   factory SuprColors.light() => const SuprColors(
@@ -69,6 +72,9 @@ class SuprColors extends ThemeExtension<SuprColors> {
         feedbackAttentionForeground:
             SuprCircleTokens.suprcircle_color_feedback_attention_foreground,
         navigationActive: SuprCircleTokens.suprcircle_color_navigation_active,
+        surfaceNotice: SuprCircleTokens.suprcircle_color_primitive_warm_ffd9c2,
+        surfaceMint: SuprCircleTokens.suprcircle_color_primitive_mint_bcefd4,
+        surfaceInset: SuprCircleTokens.suprcircle_color_primitive_blue_f0f3ff,
       );
 
   final Color surfaceCanvas;
@@ -95,6 +101,9 @@ class SuprColors extends ThemeExtension<SuprColors> {
   final Color feedbackAttentionContainer;
   final Color feedbackAttentionForeground;
   final Color navigationActive;
+  final Color surfaceNotice;
+  final Color surfaceMint;
+  final Color surfaceInset;
 
   static SuprColors of(BuildContext context) {
     final value = Theme.of(context).extension<SuprColors>();
@@ -129,6 +138,9 @@ class SuprColors extends ThemeExtension<SuprColors> {
     Color? feedbackAttentionContainer,
     Color? feedbackAttentionForeground,
     Color? navigationActive,
+    Color? surfaceNotice,
+    Color? surfaceMint,
+    Color? surfaceInset,
   }) {
     return SuprColors(
       surfaceCanvas: surfaceCanvas ?? this.surfaceCanvas,
@@ -167,6 +179,9 @@ class SuprColors extends ThemeExtension<SuprColors> {
       feedbackAttentionForeground:
           feedbackAttentionForeground ?? this.feedbackAttentionForeground,
       navigationActive: navigationActive ?? this.navigationActive,
+      surfaceNotice: surfaceNotice ?? this.surfaceNotice,
+      surfaceMint: surfaceMint ?? this.surfaceMint,
+      surfaceInset: surfaceInset ?? this.surfaceInset,
     );
   }
 
@@ -234,6 +249,9 @@ class SuprColors extends ThemeExtension<SuprColors> {
       )!,
       navigationActive:
           Color.lerp(navigationActive, other.navigationActive, t)!,
+      surfaceNotice: Color.lerp(surfaceNotice, other.surfaceNotice, t)!,
+      surfaceMint: Color.lerp(surfaceMint, other.surfaceMint, t)!,
+      surfaceInset: Color.lerp(surfaceInset, other.surfaceInset, t)!,
     );
   }
 }
