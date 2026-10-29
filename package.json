@@ -1,6 +1,6 @@
 {
   "name": "@supriyadies-work/supr-design-system",
-  "version": "1.7.0",
+  "version": "1.8.0",
   "description": "Design System package for your needs",
   "repository": {
     "type": "git",
@@ -59,7 +59,8 @@
     "version:patch": "npm version patch",
     "version:minor": "npm version minor",
     "version:major": "npm version major",
-    "postinstall": "node scripts/postinstall.js"
+    "postinstall": "node scripts/postinstall.js",
+    "test:unit": "node --import tsx --test src/lib/helpers/compressImage.test.ts"
   },
   "peerDependencies": {
     "lottie-react": "^2.4.0",
@@ -84,6 +85,7 @@
     "next-themes": "^0.4.6",
     "style-dictionary": "^5.1.1",
     "tsc-alias": "^1.8.16",
+    "tsx": "^4.19.0",
     "typescript": "^5.7.2"
   },
   "keywords": [

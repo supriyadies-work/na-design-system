@@ -5,7 +5,20 @@ All notable changes to supr-design-system will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.7.0] - Unreleased
+## [1.8.0] - 2026-10-29
+
+### Added
+
+- **RichTextEditor `onUploadImage`** – Optional callback. When set, the image button compresses then uploads and inserts only `publicUrl` (no new base64). When omitted, legacy base64 pending-image behavior is unchanged.
+- **`compressImage` helper** – Shared client compress: max width 1600px, WebP (JPEG fallback) at quality ~0.8, reject when still over ~800 KB. Unit tests included.
+
+### Changed
+
+- **Version** – Bumped to 1.8.0.
+
+---
+
+## [1.7.0] - 2026-10-28
 
 ### Added
 
