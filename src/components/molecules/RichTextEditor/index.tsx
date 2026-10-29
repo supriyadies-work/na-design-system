@@ -10,6 +10,11 @@ import React, {
 import dynamic from "next/dynamic";
 import { useTheme } from "next-themes";
 import type { PendingImage } from "@/lib/helpers/pendingImageUpload";
+import {
+  compressImageFile,
+  CompressImageError,
+  DEFAULT_MAX_IMAGE_BYTES,
+} from "@/lib/helpers/compressImage";
 import type { IconName } from "@/components/atoms/Icon";
 import { Icon } from "@/components/atoms/Icon";
 import LinkEditorModal from "@/components/molecules/Modal/LinkEditorModal";
@@ -17,75 +22,6 @@ import LinkEditorModal from "@/components/molecules/Modal/LinkEditorModal";
 
 import "react-quill-new/dist/quill.snow.css";
 import Delta from "quill-delta";
-
-// Compress an image file on the client so its size is below maxBytes.
-// Keeps original dimensions and adjusts JPEG/WebP quality.
-async function compressImageFile(file: File, maxBytes: number): Promise<File> {
-  if (typeof window === "undefined") return file;
-  if (!file.type.startsWith("image/")) return file;
-  if (file.size <= maxBytes) return file;
-
-  const imageUrl = URL.createObjectURL(file);
-
-  try {
-    const img = await new Promise<HTMLImageElement>((resolve, reject) => {
-      const image = new Image();
-      image.onload = () => resolve(image);
-      image.onerror = (err) => reject(err);
-      image.src = imageUrl;
-    });
-
-    const canvas = document.createElement("canvas");
-    canvas.width = img.naturalWidth || img.width;
-    canvas.height = img.naturalHeight || img.height;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return file;
-    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-
-    const ratio = maxBytes / file.size;
-    let quality = Math.min(0.92, Math.max(0.4, ratio));
-
-    const blob: Blob | null = await new Promise((resolve) =>
-      canvas.toBlob(
-        (b) => resolve(b),
-        file.type === "image/png" || file.type === "image/webp"
-          ? "image/webp"
-          : "image/jpeg",
-        quality
-      )
-    );
-
-    if (!blob) return file;
-
-    let finalBlob = blob;
-    if (finalBlob.size > maxBytes) {
-      const secondQuality = Math.max(0.25, quality * 0.7);
-      const secondBlob: Blob | null = await new Promise((resolve) =>
-        canvas.toBlob(
-          (b) => resolve(b),
-          file.type === "image/png" || file.type === "image/webp"
-            ? "image/webp"
-            : "image/jpeg",
-          secondQuality
-        )
-      );
-      if (secondBlob && secondBlob.size < finalBlob.size) {
-        finalBlob = secondBlob;
-      }
-    }
-
-    if (finalBlob.size > maxBytes) {
-      return file;
-    }
-
-    return new File([finalBlob], file.name, {
-      type: finalBlob.type || file.type,
-      lastModified: Date.now(),
-    });
-  } finally {
-    URL.revokeObjectURL(imageUrl);
-  }
-}
 
 // Store Quill from react-quill-new when it loads (Quill 2 doesn't use __quill on DOM)
 let QuillClass: { find: (el: HTMLElement) => any } | null = null;
@@ -379,6 +315,11 @@ interface RichTextEditorProps {
   blogSlug?: string; // Untuk upload image
   className?: string;
   onPendingImagesChange?: (images: PendingImage[]) => void; // Callback untuk pending images
+  /**
+   * Optional upload hook. When provided, the image button compresses then uploads
+   * and inserts only `publicUrl` (no base64). When omitted, legacy base64 preview behavior is kept.
+   */
+  onUploadImage?: (file: File) => Promise<{ publicUrl: string }>;
   testId?: string;
   /** When provided, link hover will fetch preview via this callback. If omitted or fetch fails, fallback tooltip (URL only) is shown. */
   fetchLinkPreview?: (url: string) => Promise<{ title: string | null }>;
@@ -391,6 +332,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
   blogSlug,
   className = "",
   onPendingImagesChange,
+  onUploadImage,
   testId,
   fetchLinkPreview,
 }) => {
@@ -399,6 +341,18 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
   const quillRef = useRef<any>(null); // Container div ref
   const quillEditorRef = useRef<any>(null); // Quill editor instance
   const blogSlugRef = useRef<string | undefined>(blogSlug);
+  const onUploadImageRef = useRef(onUploadImage);
+  const onChangeRef = useRef(onChange);
+  const valueRef = useRef(value);
+  useEffect(() => {
+    onUploadImageRef.current = onUploadImage;
+  }, [onUploadImage]);
+  useEffect(() => {
+    onChangeRef.current = onChange;
+  }, [onChange]);
+  useEffect(() => {
+    valueRef.current = value;
+  }, [value]);
   const [pendingImages, setPendingImages] = useState<PendingImage[]>([]);
   const [showTooltip, setShowTooltip] = useState(false);
   const [tooltipPosition, setTooltipPosition] = useState({ top: 0, left: 0 });
@@ -1065,6 +1019,165 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     setShowTooltip(false);
   }, []);
 
+  const resolveQuillInstance = useCallback(() => {
+    let quill: any = quillEditorRef.current;
+    if (!quill && QuillClass && quillRef.current) {
+      const qlContainer = quillRef.current.querySelector(".ql-container");
+      if (qlContainer) {
+        try {
+          quill = QuillClass.find(qlContainer);
+        } catch {
+          // Quill.find may throw
+        }
+      }
+    }
+    if (quill && !quillEditorRef.current) {
+      quillEditorRef.current = quill;
+      setQuillReady(true);
+    }
+    return quill;
+  }, []);
+
+  const insertImageUrl = useCallback(
+    async (imageUrl: string, pendingId?: string, altText: string = "") => {
+      let editorElement: HTMLElement | null = null;
+      let attempts = 0;
+      const maxAttempts = 20;
+      while (!editorElement && attempts < maxAttempts) {
+        await new Promise((resolve) => setTimeout(resolve, 100));
+        if (quillRef.current) {
+          editorElement = quillRef.current.querySelector(
+            ".ql-editor"
+          ) as HTMLElement;
+        }
+        if (!editorElement) {
+          const allEditors = document.querySelectorAll(".ql-editor");
+          for (let i = 0; i < allEditors.length; i++) {
+            const el = allEditors[i] as HTMLElement;
+            if (quillRef.current && quillRef.current.contains(el)) {
+              editorElement = el;
+              break;
+            }
+          }
+        }
+        attempts++;
+      }
+      if (!editorElement) {
+        throw new Error("Editor not ready. Please wait a moment and try again.");
+      }
+
+      const quill = resolveQuillInstance();
+      let inserted = false;
+      const currentValue = valueRef.current;
+      const emitChange = onChangeRef.current;
+
+      if (
+        quill &&
+        typeof quill.getSelection === "function" &&
+        typeof quill.insertEmbed === "function"
+      ) {
+        try {
+          const pendingIndex = pendingSlashInsertIndexRef.current;
+          const selection = quill.getSelection(true);
+          const index =
+            pendingIndex != null
+              ? pendingIndex
+              : selection?.index ?? Math.max(0, quill.getLength() - 1);
+          if (pendingIndex != null) pendingSlashInsertIndexRef.current = null;
+          quill.insertEmbed(index, "image", imageUrl, "user");
+          quill.setSelection(index + 1);
+          const contentAfterInsert = quill.root.innerHTML;
+          if (contentAfterInsert !== currentValue) {
+            emitChange(normalizeCollapsibleTrailingLink(contentAfterInsert));
+          }
+          setTimeout(() => {
+            const matched = quill.root.querySelectorAll("img");
+            for (let i = 0; i < matched.length; i++) {
+              const imgEl = matched[i] as HTMLImageElement;
+              if (imgEl.getAttribute("src") !== imageUrl) continue;
+              if (pendingId) imgEl.setAttribute("data-pending-id", pendingId);
+              if (altText) imgEl.setAttribute("alt", altText);
+              imgEl.style.maxWidth = "100%";
+              imgEl.style.height = "auto";
+              imgEl.style.display = "block";
+              break;
+            }
+          }, 50);
+          inserted = true;
+        } catch (error) {
+          console.warn("Quill insertEmbed failed:", error);
+        }
+      }
+
+      if (!inserted && quill && typeof quill.pasteHTML === "function") {
+        try {
+          const selection = quill.getSelection(true);
+          let index = 0;
+          if (selection && selection.index !== null) {
+            index = selection.index;
+          } else {
+            index = Math.max(0, quill.getLength() - 1);
+          }
+          const escapedUrl = imageUrl.replace(/"/g, "&quot;");
+          const escapedAlt = altText.replace(/"/g, "&quot;");
+          const pendingAttr = pendingId
+            ? ` data-pending-id="${pendingId}"`
+            : "";
+          quill.pasteHTML(
+            index,
+            `<img src="${escapedUrl}" alt="${escapedAlt}"${pendingAttr} style="max-width: 100%; height: auto; display: block;" />`,
+            "user"
+          );
+          quill.setSelection(index + 1);
+          setTimeout(() => {
+            const content = quill.root.innerHTML;
+            if (content !== currentValue) {
+              emitChange(normalizeCollapsibleTrailingLink(content));
+            }
+          }, 100);
+          inserted = true;
+        } catch (error) {
+          console.warn("Quill pasteHTML failed:", error);
+        }
+      }
+
+      if (!inserted) {
+        const img = document.createElement("img");
+        img.src = imageUrl;
+        if (pendingId) img.setAttribute("data-pending-id", pendingId);
+        img.setAttribute("alt", altText);
+        img.style.maxWidth = "100%";
+        img.style.height = "auto";
+        img.style.display = "block";
+        img.style.margin = "10px 0";
+
+        const selection = window.getSelection();
+        if (selection && selection.rangeCount > 0) {
+          const range = selection.getRangeAt(0);
+          if (editorElement.contains(range.commonAncestorContainer)) {
+            range.insertNode(img);
+            range.setStartAfter(img);
+            range.collapse(true);
+            selection.removeAllRanges();
+            selection.addRange(range);
+          } else {
+            editorElement.appendChild(img);
+          }
+        } else {
+          editorElement.appendChild(img);
+        }
+
+        setTimeout(() => {
+          const updatedContent = editorElement!.innerHTML;
+          if (updatedContent !== currentValue) {
+            emitChange(normalizeCollapsibleTrailingLink(updatedContent));
+          }
+        }, 100);
+      }
+    },
+    [resolveQuillInstance]
+  );
+
   // Custom image handler
   const imageHandler = useMemo(
     () => () => {
@@ -1077,35 +1190,52 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
         const file = input.files?.[0];
         if (!file) return;
 
-        // Validate file type
         if (!file.type?.startsWith("image/")) {
           alert("Please select an image file");
           return;
         }
 
-        const MAX_BYTES = 5 * 1024 * 1024;
-        let workingFile = file;
-
-        if (file.size > MAX_BYTES) {
-          try {
-            workingFile = await compressImageFile(file, MAX_BYTES);
-          } catch (err) {
-            console.error("Error compressing editor image:", err);
-            alert("Failed to compress image file");
-            return;
-          }
-
-          if (workingFile.size > MAX_BYTES) {
-            alert("Image size must be less than 5MB even after compression");
-            return;
-          }
+        let workingFile: File;
+        try {
+          workingFile = await compressImageFile(file, {
+            maxBytes: DEFAULT_MAX_IMAGE_BYTES,
+          });
+        } catch (err) {
+          console.error("Error compressing editor image:", err);
+          const message =
+            err instanceof CompressImageError
+              ? err.message
+              : "Failed to compress image file";
+          alert(message);
+          return;
         }
 
-        try {
-          // Create preview URL using FileReader for base64 data URL (more reliable)
-          const imageId = `pending-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        const upload = onUploadImageRef.current;
+        if (upload) {
+          const altRaw = window.prompt("Alt text (required):", "");
+          const altText = (altRaw || "").trim();
+          if (!altText) {
+            alert("Alt text is required for uploaded images.");
+            return;
+          }
+          try {
+            const result = await upload(workingFile);
+            if (!result?.publicUrl) {
+              throw new Error("Upload did not return a publicUrl");
+            }
+            await insertImageUrl(result.publicUrl, undefined, altText);
+          } catch (error: any) {
+            console.error("Error uploading editor image:", error);
+            alert(`Failed to upload image: ${error?.message || "Unknown error"}`);
+          }
+          return;
+        }
 
-          // Use FileReader to create data URL (works better than blob URL)
+        // Legacy path (no onUploadImage): embed compressed image as base64 data URL
+        try {
+          const imageId = `pending-${Date.now()}-${Math.random()
+            .toString(36)
+            .substr(2, 9)}`;
           const reader = new FileReader();
           reader.onload = async (e) => {
             const dataUrl = e.target?.result as string;
@@ -1113,221 +1243,32 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
               alert("Failed to load image");
               return;
             }
-
-            // Create pending image object with data URL
             const pendingImage: PendingImage = {
               id: imageId,
               file: workingFile,
               previewUrl: dataUrl,
             } as PendingImage;
-
-            // Add to pending images
             setPendingImages((prev) => [...prev, pendingImage]);
-
-            // Wait a bit to ensure editor DOM is ready, with retry
-            let editorElement: HTMLElement | null = null;
-            let attempts = 0;
-            const maxAttempts = 20;
-
-            while (!editorElement && attempts < maxAttempts) {
-              await new Promise((resolve) => setTimeout(resolve, 100));
-
-              // Try to find editor element
-              if (quillRef.current) {
-                editorElement = quillRef.current.querySelector(
-                  ".ql-editor"
-                ) as HTMLElement;
-              }
-
-              // Also try to find from document (fallback)
-              if (!editorElement) {
-                const allEditors = document.querySelectorAll(".ql-editor");
-                if (allEditors.length > 0) {
-                  // Find the one within our component
-                  for (let i = 0; i < allEditors.length; i++) {
-                    const el = allEditors[i] as HTMLElement;
-                    if (quillRef.current && quillRef.current.contains(el)) {
-                      editorElement = el;
-                      break;
-                    }
-                  }
-                }
-              }
-
-              attempts++;
-            }
-
-            if (!editorElement) {
-              console.error(
-                "Editor element (.ql-editor) not found after retries. Container:",
-                quillRef.current
-              );
+            try {
+              await insertImageUrl(dataUrl, imageId, "");
+            } catch (error: any) {
               setPendingImages((prev) =>
                 prev.filter((img) => img.id !== imageId)
               );
-              alert("Editor not ready. Please wait a moment and try again.");
-              return;
-            }
-
-            // Insert image using data URL
-            // Try to use Quill API if available (better insertion)
-            // First try cached instance
-            let quill: any = quillEditorRef.current;
-
-            // Fallback: try to find Quill instance from DOM (Quill 2: pass .ql-container to find)
-            if (!quill && QuillClass && quillRef.current) {
-              const container = quillRef.current;
-              const qlContainer = container.querySelector(".ql-container");
-              if (qlContainer) {
-                try {
-                  quill = QuillClass.find(qlContainer);
-                } catch (e) {
-                  // Quill.find may throw
-                }
-              }
-            }
-
-            // Cache if found
-            if (quill && !quillEditorRef.current) {
-              quillEditorRef.current = quill;
-              setQuillReady(true);
-            }
-
-            // Try Quill API first (best method)
-            let inserted = false;
-
-            if (
-              quill &&
-              typeof quill.getSelection === "function" &&
-              typeof quill.insertEmbed === "function"
-            ) {
-              try {
-                const pendingIndex = pendingSlashInsertIndexRef.current;
-                const selection = quill.getSelection(true);
-                const index =
-                  pendingIndex != null
-                    ? pendingIndex
-                    : selection?.index ?? Math.max(0, quill.getLength() - 1);
-                if (pendingIndex != null) pendingSlashInsertIndexRef.current = null;
-                quill.insertEmbed(index, "image", dataUrl, "user");
-                quill.setSelection(index + 1);
-                const contentAfterInsert = quill.root.innerHTML;
-                if (contentAfterInsert !== value)
-                  onChange(
-                    normalizeCollapsibleTrailingLink(contentAfterInsert)
-                  );
-                setTimeout(() => {
-                  const imgElements = quill.root.querySelectorAll(
-                    `img[src="${dataUrl}"]`
-                  );
-                  if (imgElements.length > 0) {
-                    const imgEl = imgElements[0] as HTMLImageElement;
-                    imgEl.setAttribute("data-pending-id", imageId);
-                    imgEl.style.maxWidth = "100%";
-                    imgEl.style.height = "auto";
-                    imgEl.style.display = "block";
-                  }
-                }, 50);
-                inserted = true;
-              } catch (error) {
-                console.warn("Quill insertEmbed failed:", error);
-              }
-            }
-
-            // Fallback: Use pasteHTML if available
-            if (!inserted && quill && typeof quill.pasteHTML === "function") {
-              try {
-                const selection = quill.getSelection(true);
-                let index = 0;
-
-                if (selection && selection.index !== null) {
-                  index = selection.index;
-                } else {
-                  const length = quill.getLength();
-                  index = Math.max(0, length - 1);
-                }
-
-                // Escape dataUrl for HTML
-                const escapedUrl = dataUrl.replace(/"/g, "&quot;");
-                quill.pasteHTML(
-                  index,
-                  `<img src="${escapedUrl}" data-pending-id="${imageId}" style="max-width: 100%; height: auto; display: block;" />`,
-                  "user"
-                );
-                quill.setSelection(index + 1);
-
-                setTimeout(() => {
-                  const content = quill.root.innerHTML;
-                  if (content !== value) {
-                    onChange(normalizeCollapsibleTrailingLink(content));
-                  }
-                }, 100);
-
-                inserted = true;
-              } catch (error) {
-                console.warn("Quill pasteHTML failed:", error);
-              }
-            }
-
-            // Final fallback: Direct DOM manipulation
-            if (!inserted) {
-              // Create image element
-              const img = document.createElement("img");
-              img.src = dataUrl;
-              img.setAttribute("data-pending-id", imageId);
-              img.setAttribute("alt", "");
-              img.style.maxWidth = "100%";
-              img.style.height = "auto";
-              img.style.display = "block";
-              img.style.margin = "10px 0";
-
-              const selection = window.getSelection();
-
-              if (selection && selection.rangeCount > 0) {
-                const range = selection.getRangeAt(0);
-
-                // Check if range is within editor
-                if (editorElement.contains(range.commonAncestorContainer)) {
-                  // Insert image at cursor
-                  range.insertNode(img);
-                  range.setStartAfter(img);
-                  range.collapse(true);
-                  selection.removeAllRanges();
-                  selection.addRange(range);
-                } else {
-                  // Cursor not in editor, append at end
-                  editorElement.appendChild(img);
-                }
-              } else {
-                // No selection, append at end
-                editorElement.appendChild(img);
-              }
-
-              // Trigger onChange
-              setTimeout(() => {
-                const updatedContent = editorElement.innerHTML;
-                if (updatedContent !== value) {
-                  onChange(
-                    normalizeCollapsibleTrailingLink(updatedContent)
-                  );
-                }
-              }, 100);
+              alert(error?.message || "Failed to insert image");
             }
           };
-
           reader.onerror = () => {
             alert("Failed to read image file");
           };
-
-          reader.readAsDataURL(file);
+          reader.readAsDataURL(workingFile);
         } catch (error: any) {
           console.error("Error adding image:", error);
           alert(`Failed to add image: ${error.message || "Unknown error"}`);
         }
       };
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [] // Empty dependency array - function never changes
+    [insertImageUrl]
   );
 
   // Execute slash command: remove "/command" text then run Quill action
